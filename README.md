@@ -39,6 +39,7 @@ Here are some of the features:
 
 
 o	
+<img  alt="image" src="https://github.com/user-attachments/assets/7e605922-6644-4492-94a0-5875698481c5" />
 
 o	 
 •	General public should be able to self register or use existing MyOntario account (Probably out of scope for developers’ day)
