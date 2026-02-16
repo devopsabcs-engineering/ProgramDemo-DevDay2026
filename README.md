@@ -34,7 +34,12 @@ Here are some of the features:
 •	Screens follow Ontario Design System (Ontario Design System)
 •	All screens must be WCAG 2.2 (Web Content Accessibility Guidelines (WCAG) 2.2)
 •	Follow OPS template if possible (Government of Ontario | ontario.ca)
-o	 
+
+<img  alt="image" src="https://github.com/user-attachments/assets/97260422-82e7-4b2a-a869-d7de057c3315" />
+
+
+o	
+
 o	 
 •	General public should be able to self register or use existing MyOntario account (Probably out of scope for developers’ day)
 •	Registered Public user should be able to submit a new program form
