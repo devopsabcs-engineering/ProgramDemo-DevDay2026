@@ -28,6 +28,7 @@ Epic
 * Every User Story or Bug must belong to a Feature.
 * Every Feature must belong to an Epic.
 * Create the parent items first if they do not exist before creating child items.
+* Every work item (Epic, Feature, User Story, Bug) must include the tag `Agentic AI`.
 
 ## Branching Strategy
 
