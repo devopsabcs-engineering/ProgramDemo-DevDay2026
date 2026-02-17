@@ -8,8 +8,8 @@ applyTo: ".github/workflows/**"
 - Run CI on pull_request events targeting main branch.
 - Run CD on push events to main branch (after CI passes).
 - Use job-level permissions with least privilege (contents: read by default).
-- Cache Maven dependencies using actions/cache with ~/.m2/repository path.
-- Cache npm dependencies using actions/cache with ~/.npm path.
+- Cache Maven dependencies using the built-in `cache: maven` parameter on actions/setup-java, or explicitly with actions/cache and ~/.m2/repository path.
+- Cache npm dependencies using the built-in `cache: npm` parameter on actions/setup-node, or explicitly with actions/cache and ~/.npm path.
 - Use matrix strategy for testing across multiple Java or Node versions when applicable.
 - Include explicit timeout-minutes on long-running jobs (default: 30).
 - Use environment variables for configuration, not hardcoded values.

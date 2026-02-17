@@ -66,6 +66,16 @@ Create all pre-demo scaffolding for a 2-hour live coding demo: repository-wide a
 * Git tags `v0.1.0` and `v0.2.0` verified on correct commits and pushed to remote
 * No blocking issues found
 
+## Review Fix Changes (2026-02-16)
+
+Applied fixes for findings identified in 2026-02-16-ops-devday-demo-predemo-setup-review.md.
+
+### Modified
+
+* `.github/workflows/ci.yml` - Fixed workflow-level permissions from `contents: write` to `contents: read`; added job-level `permissions: contents: read` to backend-ci and frontend-ci; added `permissions: contents: write` to tag job only; changed tag job `needs: []` to `needs: [backend-ci, frontend-ci]` with `!failure() && !cancelled()` guard; added `timeout-minutes: 10` to tag job
+* `docs/data-dictionary.md` - Added missing audit columns (created_date, updated_date, created_by) to notification table definition and ER diagram per coding standards
+* `.github/instructions/cicd.instructions.md` - Updated caching guidance to mention built-in `cache` parameter on setup-java and setup-node as preferred approach alongside explicit actions/cache
+
 ## Release Summary
 
 **Total files affected**: 13 (12 added, 1 modified, 0 removed)

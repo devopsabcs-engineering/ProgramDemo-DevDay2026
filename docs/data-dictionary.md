@@ -38,6 +38,9 @@ erDiagram
         NVARCHAR notification_type
         DATETIME2 sent_date
         NVARCHAR status
+        DATETIME2 created_date
+        DATETIME2 updated_date
+        NVARCHAR created_by
     }
 ```
 
@@ -83,6 +86,9 @@ Tracks email notifications sent to citizens throughout the approval process.
 | notification_type | NVARCHAR(50) | NOT NULL | Type of notification: SUBMISSION_CONFIRMATION, DECISION |
 | sent_date | DATETIME2 | NULL | Timestamp when the notification was sent |
 | status | NVARCHAR(50) | NOT NULL, DEFAULT 'PENDING' | Delivery status: PENDING, SENT, FAILED |
+| created_date | DATETIME2 | NOT NULL, DEFAULT GETUTCDATE() | Record creation timestamp |
+| updated_date | DATETIME2 | NOT NULL, DEFAULT GETUTCDATE() | Last modification timestamp |
+| created_by | NVARCHAR(100) | NULL | User or system that created the notification record |
 
 ## Seed Data
 
