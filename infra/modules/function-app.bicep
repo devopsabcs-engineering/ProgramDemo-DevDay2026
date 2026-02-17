@@ -32,23 +32,20 @@ resource consumptionPlan 'Microsoft.Web/serverfarms@2024-04-01' = {
     name: 'Y1'
     tier: 'Dynamic'
   }
-  properties: {
-    reserved: true
-  }
 }
 
 resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
   name: 'func-${config.prefix}-${config.environment}'
   location: config.location
   tags: config.tags
-  kind: 'functionapp,linux'
+  kind: 'functionapp'
   properties: {
     serverFarmId: consumptionPlan.id
     httpsOnly: true
     siteConfig: {
-      linuxFxVersion: 'DOTNET-ISOLATED|8.0'
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
+      netFrameworkVersion: 'v8.0'
       appSettings: [
         {
           name: 'AzureWebJobsStorage'
