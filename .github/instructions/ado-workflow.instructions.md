@@ -62,11 +62,17 @@ fix: correct notification email template AB#1235
 
 This links commits to ADO work items automatically through GitHub and Azure DevOps integration.
 
+To auto-close a work item when the PR merges, use `Fixes AB#{id}` in the commit message or PR description:
+
+```text
+feat: add citizen submission form Fixes AB#1234
+```
+
 ## Pull Request Workflow
 
 1. Push the feature branch to the remote.
 2. Create a pull request targeting `main`.
-3. Reference the work item in the PR description using `AB#{work-item-id}`.
+3. Reference the work item in the PR description using `Fixes AB#{work-item-id}` to auto-close the work item on merge.
 4. Complete code review and obtain required approvals.
 5. Merge the PR (squash merge preferred for a clean history).
 
