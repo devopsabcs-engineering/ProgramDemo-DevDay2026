@@ -104,3 +104,28 @@ Applied fixes for findings identified in 2026-02-16-ops-devday-demo-predemo-setu
 **Git milestones**: `v0.1.0` (scaffolding), `v0.2.0` (architecture docs)
 
 **Known deviations**: Iteration dates not configurable via MCP tools; ADO priority capped at 4
+
+---
+
+## Infrastructure Deployment Changes (2026-02-16)
+
+### Added
+
+* `infra/types.bicep` - Shared Bicep type definitions (DeploymentConfig, SqlConfig, AppServicePlanConfig) with defaults
+* `infra/main.bicep` - Main orchestration template deploying all Azure resources via modules
+* `infra/main.bicepparam` - Parameter values for dev environment using readEnvironmentVariable for SQL password
+* `infra/modules/app-service-plan.bicep` - Linux App Service Plan module
+* `infra/modules/web-app.bicep` - Reusable web app module (used for both frontend and backend)
+* `infra/modules/sql.bicep` - Azure SQL Server, database, and firewall rules module
+* `infra/modules/storage.bicep` - Storage account module for Azure Functions runtime
+* `infra/modules/function-app.bicep` - Consumption-plan Function App module for Durable Functions
+* `infra/modules/logic-app.bicep` - Consumption Logic App module with HTTP trigger for email notifications
+* `.github/workflows/deploy-infra.yml` - Manual-dispatch workflow with validate + deploy jobs using OIDC auth
+
+### Modified
+
+* `.gitignore` - Added `infra/*.json` to ignore compiled ARM template output
+
+### Removed
+
+* `infra/.gitkeep` - Replaced by actual Bicep infrastructure files
