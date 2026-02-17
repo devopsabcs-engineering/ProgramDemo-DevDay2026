@@ -38,97 +38,97 @@ Create all pre-demo scaffolding for a 2-hour live coding demo: repository-wide a
 
 ## Implementation Checklist
 
-### [ ] Implementation Phase 1: Repository Custom Instructions
+### [x] Implementation Phase 1: Repository Custom Instructions
 
 <!-- parallelizable: true -->
 
-* [ ] Step 1.1: Create `.github/copilot-instructions.md` with repository-wide project context, tech stack, coding standards, accessibility rules, and Git workflow.
+* [x] Step 1.1: Create `.github/copilot-instructions.md` with repository-wide project context, tech stack, coding standards, accessibility rules, and Git workflow.
   * Details: .copilot-tracking/details/2026-02-16-ops-devday-demo-predemo-setup-details.md (Lines 15-69)
-* [ ] Step 1.2: Create `.github/instructions/java.instructions.md` with `applyTo: "backend/**/*.java"` covering Spring Boot 3.x patterns.
+* [x] Step 1.2: Create `.github/instructions/java.instructions.md` with `applyTo: "backend/**/*.java"` covering Spring Boot 3.x patterns.
   * Details: .copilot-tracking/details/2026-02-16-ops-devday-demo-predemo-setup-details.md (Lines 71-95)
-* [ ] Step 1.3: Create `.github/instructions/react.instructions.md` with `applyTo: "frontend/**/*.tsx,frontend/**/*.ts"` covering Ontario Design System, i18next, WCAG 2.2.
+* [x] Step 1.3: Create `.github/instructions/react.instructions.md` with `applyTo: "frontend/**/*.tsx,frontend/**/*.ts"` covering Ontario Design System, i18next, WCAG 2.2.
   * Details: .copilot-tracking/details/2026-02-16-ops-devday-demo-predemo-setup-details.md (Lines 97-126)
-* [ ] Step 1.4: Create `.github/instructions/sql.instructions.md` with `applyTo: "database/**/*.sql"` covering Azure SQL conventions.
+* [x] Step 1.4: Create `.github/instructions/sql.instructions.md` with `applyTo: "database/**/*.sql"` covering Azure SQL conventions.
   * Details: .copilot-tracking/details/2026-02-16-ops-devday-demo-predemo-setup-details.md (Lines 128-150)
-* [ ] Step 1.5: Create `.github/instructions/cicd.instructions.md` with `applyTo: ".github/workflows/**"` covering GitHub Actions conventions.
+* [x] Step 1.5: Create `.github/instructions/cicd.instructions.md` with `applyTo: ".github/workflows/**"` covering GitHub Actions conventions.
   * Details: .copilot-tracking/details/2026-02-16-ops-devday-demo-predemo-setup-details.md (Lines 152-176)
-* [ ] Step 1.6: Validate instruction file frontmatter and Markdown lint
+* [x] Step 1.6: Validate instruction file frontmatter and Markdown lint
   * Run Markdown lint on all new `.instructions.md` files.
   * Verify `applyTo` globs are syntactically correct.
 
-### [ ] Implementation Phase 2: Architecture Documents
+### [x] Implementation Phase 2: Architecture Documents
 
 <!-- parallelizable: true -->
 
-* [ ] Step 2.1: Create `docs/architecture.md` with Mermaid architecture diagram showing all system components and data flow.
+* [x] Step 2.1: Create `docs/architecture.md` with Mermaid architecture diagram showing all system components and data flow.
   * Details: .copilot-tracking/details/2026-02-16-ops-devday-demo-predemo-setup-details.md (Lines 180-248)
-* [ ] Step 2.2: Create `docs/data-dictionary.md` with table definitions, column types, and relationships.
+* [x] Step 2.2: Create `docs/data-dictionary.md` with table definitions, column types, and relationships.
   * Details: .copilot-tracking/details/2026-02-16-ops-devday-demo-predemo-setup-details.md (Lines 250-328)
-* [ ] Step 2.3: Create `docs/design-document.md` with technical decisions, security model, deployment strategy, and bilingual approach.
+* [x] Step 2.3: Create `docs/design-document.md` with technical decisions, security model, deployment strategy, and bilingual approach.
   * Details: .copilot-tracking/details/2026-02-16-ops-devday-demo-predemo-setup-details.md (Lines 330-432)
 
-### [ ] Implementation Phase 3: Directory Scaffolding and CI Pipeline
+### [x] Implementation Phase 3: Directory Scaffolding and CI Pipeline
 
 <!-- parallelizable: true -->
 
-* [ ] Step 3.1: Create directory placeholders with `.gitkeep` files for `database/migrations/`, `backend/`, `frontend/`, and `infra/`.
+* [x] Step 3.1: Create directory placeholders with `.gitkeep` files for `database/migrations/`, `backend/`, `frontend/`, and `infra/`.
   * Details: .copilot-tracking/details/2026-02-16-ops-devday-demo-predemo-setup-details.md (Lines 436-460)
-* [ ] Step 3.2: Expand `.github/workflows/ci.yml` to add placeholder build and test jobs for backend (Maven) and frontend (npm), keeping existing tag job.
+* [x] Step 3.2: Expand `.github/workflows/ci.yml` to add placeholder build and test jobs for backend (Maven) and frontend (npm), keeping existing tag job.
   * Details: .copilot-tracking/details/2026-02-16-ops-devday-demo-predemo-setup-details.md (Lines 462-536)
-* [ ] Step 3.3: Validate CI workflow syntax
+* [x] Step 3.3: Validate CI workflow syntax
   * Run `actionlint` or YAML validation on the expanded workflow.
 
-### [ ] Implementation Phase 4: ADO Work Items
+### [x] Implementation Phase 4: ADO Work Items
 
 <!-- parallelizable: false -->
 
-* [ ] Step 4.1: Enable Epics backlog level in ADO project settings (if not already enabled).
+* [x] Step 4.1: Enable Epics backlog level in ADO project settings (if not already enabled).
   * Details: .copilot-tracking/details/2026-02-16-ops-devday-demo-predemo-setup-details.md (Lines 540-550)
-* [ ] Step 4.2: Create the Epic "OPS Program Approval System" with `Agentic AI` tag.
+* [x] Step 4.2: Create the Epic "OPS Program Approval System" with `Agentic AI` tag.
   * Details: .copilot-tracking/details/2026-02-16-ops-devday-demo-predemo-setup-details.md (Lines 552-564)
-* [ ] Step 4.3: Create 8 Features under the Epic, each with `Agentic AI` tag.
+* [x] Step 4.3: Create 8 Features under the Epic, each with `Agentic AI` tag.
   * Details: .copilot-tracking/details/2026-02-16-ops-devday-demo-predemo-setup-details.md (Lines 566-610)
-* [ ] Step 4.4: Create ~30 User Stories under the Features, each with `Agentic AI` tag.
+* [x] Step 4.4: Create ~30 User Stories under the Features, each with `Agentic AI` tag.
   * Details: .copilot-tracking/details/2026-02-16-ops-devday-demo-predemo-setup-details.md (Lines 612-730)
-* [ ] Step 4.5: Assign iteration dates to the 3 default iterations ("Sprint 1 - Demo Day" for all demo stories).
+* [x] Step 4.5: Assign iteration dates to the 3 default iterations ("Sprint 1 - Demo Day" for all demo stories).
   * Details: .copilot-tracking/details/2026-02-16-ops-devday-demo-predemo-setup-details.md (Lines 732-746)
 
-### [ ] Implementation Phase 5: Git Commits and Tags
+### [x] Implementation Phase 5: Git Commits and Tags
 
 <!-- parallelizable: false -->
 
-* [ ] Step 5.1: Stage and commit all scaffolding files (instructions, directory placeholders, CI pipeline) with message `feat: add repo scaffolding and custom instructions AB#{epic-id}`.
+* [x] Step 5.1: Stage and commit all scaffolding files (instructions, directory placeholders, CI pipeline) with message `feat: add repo scaffolding and custom instructions AB#{epic-id}`.
   * Details: .copilot-tracking/details/2026-02-16-ops-devday-demo-predemo-setup-details.md (Lines 750-768)
-* [ ] Step 5.2: Tag commit as `v0.1.0` with annotation "Repo scaffolding complete".
+* [x] Step 5.2: Tag commit as `v0.1.0` with annotation "Repo scaffolding complete".
   * Details: .copilot-tracking/details/2026-02-16-ops-devday-demo-predemo-setup-details.md (Lines 770-780)
-* [ ] Step 5.3: Stage and commit architecture docs with message `docs: add architecture, data dictionary, and design document AB#{epic-id}`.
+* [x] Step 5.3: Stage and commit architecture docs with message `docs: add architecture, data dictionary, and design document AB#{epic-id}`.
   * Details: .copilot-tracking/details/2026-02-16-ops-devday-demo-predemo-setup-details.md (Lines 782-792)
-* [ ] Step 5.4: Tag commit as `v0.2.0` with annotation "Architecture and data dictionary".
+* [x] Step 5.4: Tag commit as `v0.2.0` with annotation "Architecture and data dictionary".
   * Details: .copilot-tracking/details/2026-02-16-ops-devday-demo-predemo-setup-details.md (Lines 794-804)
-* [ ] Step 5.5: Push all commits and tags to origin.
+* [x] Step 5.5: Push all commits and tags to origin.
   * Details: .copilot-tracking/details/2026-02-16-ops-devday-demo-predemo-setup-details.md (Lines 806-816)
 
-### [ ] Implementation Phase 6: Validation
+### [x] Implementation Phase 6: Validation
 
 <!-- parallelizable: false -->
 
-* [ ] Step 6.1: Run full project validation
+* [x] Step 6.1: Run full project validation
   * Verify all files exist with correct paths and content.
   * Validate Markdown syntax on all `.md` files.
   * Validate YAML syntax on CI workflow.
   * Confirm `applyTo` frontmatter globs in all instruction files.
-* [ ] Step 6.2: Verify ADO work items
+* [x] Step 6.2: Verify ADO work items
   * Confirm Epic exists with correct title and tag.
   * Confirm 8 Features are linked to Epic with correct titles and tags.
   * Confirm ~30 User Stories are linked to correct Features with correct titles and tags.
   * Verify iterations are assigned.
-* [ ] Step 6.3: Verify Git tags
+* [x] Step 6.3: Verify Git tags
   * Confirm `v0.1.0` and `v0.2.0` tags exist on correct commits.
   * Confirm tags are pushed to remote.
-* [ ] Step 6.4: Fix minor validation issues
+* [x] Step 6.4: Fix minor validation issues
   * Iterate on lint errors, YAML warnings, and missing fields.
   * Apply fixes directly when corrections are straightforward.
-* [ ] Step 6.5: Report blocking issues
+* [x] Step 6.5: Report blocking issues
   * Document issues requiring additional research.
   * Provide user with next steps and recommended fixes.
 
