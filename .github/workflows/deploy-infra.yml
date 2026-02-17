@@ -105,7 +105,8 @@ jobs:
       - name: Deploy Bicep template
         uses: azure/cli@v2
         env:
-          SQL_ADMIN_PASSWORD: ${{ secrets.SQL_ADMIN_PASSWORD }}
+          SQL_AAD_ADMIN_LOGIN: ${{ secrets.SQL_AAD_ADMIN_LOGIN }}
+          SQL_AAD_ADMIN_OBJECT_ID: ${{ secrets.SQL_AAD_ADMIN_OBJECT_ID }}
         with:
           inlineScript: |
             az deployment group create \

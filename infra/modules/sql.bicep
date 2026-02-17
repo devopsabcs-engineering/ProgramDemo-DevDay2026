@@ -21,11 +21,17 @@ resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' = {
   location: config.location
   tags: config.tags
   properties: {
-    administratorLogin: sqlConfig.administratorLogin
-    administratorLoginPassword: sqlConfig.administratorLoginPassword
     version: '12.0'
     minimalTlsVersion: '1.2'
     publicNetworkAccess: 'Enabled'
+    administrators: {
+      administratorType: 'ActiveDirectory'
+      login: sqlConfig.aadAdminLogin
+      sid: sqlConfig.aadAdminObjectId
+      tenantId: tenant().tenantId
+      azureADOnlyAuthentication: true
+      principalType: 'Group'
+    }
   }
 }
 
@@ -63,5 +69,5 @@ output serverName string = sqlServer.name
 @description('The name of the SQL Database.')
 output databaseName string = sqlDatabase.name
 
-@description('The JDBC connection string for the database.')
-output jdbcConnectionString string = 'jdbc:sqlserver://${sqlServer.properties.fullyQualifiedDomainName}:1433;database=${sqlDatabase.name};encrypt=true;trustServerCertificate=false;'
+@description('The JDBC connection string for the database (Azure AD auth).')
+output jdbcConnectionString string = 'jdbc:sqlserver://${sqlServer.properties.fullyQualifiedDomainName}:1433;database=${sqlDatabase.name};encrypt=true;trustServerCertificate=false;authentication=ActiveDirectoryDefault;'

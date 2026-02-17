@@ -26,12 +26,11 @@ type DeploymentConfig = {
 @description('SQL Server and database configuration.')
 @sealed()
 type SqlConfig = {
-  @description('SQL Server administrator login name.')
-  administratorLogin: string
+  @description('Azure AD administrator display name (user or group).')
+  aadAdminLogin: string
 
-  @secure()
-  @description('SQL Server administrator login password.')
-  administratorLoginPassword: string
+  @description('Azure AD administrator object ID.')
+  aadAdminObjectId: string
 
   @description('SQL Database SKU name.')
   skuName: 'Basic' | 'S0' | 'S1' | 'S2' | 'P1'

@@ -30,8 +30,8 @@ param appServicePlanConfig = {
 /* ─── SQL Parameters ─── */
 
 param sqlConfig = {
-  administratorLogin: 'sqladmin'
-  administratorLoginPassword: readEnvironmentVariable('SQL_ADMIN_PASSWORD', '')
+  aadAdminLogin: readEnvironmentVariable('SQL_AAD_ADMIN_LOGIN', 'sql-admins')
+  aadAdminObjectId: readEnvironmentVariable('SQL_AAD_ADMIN_OBJECT_ID', '')
   skuName: 'Basic'
   isAllowAzureServicesEnabled: true
 }
