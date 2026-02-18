@@ -16,7 +16,8 @@ Build the actual OPS Program Approval application now that infrastructure is dep
 * Assumptions:
   * Azure resources are deployed and verified (App Service Plan, 2 App Services, SQL Server/DB, Storage Account, Function App, Logic App)
   * ADO Epic 1797 with 8 Features and 35 User Stories exists, all in "New" state
-  * Tags v0.0.1 through v0.2.0 exist; next will be v0.3.0
+  * Tags v0.0.1 through v0.2.1 exist; next will be v0.3.0
+  * Tag v0.2.1 is the demo rehearsal starting point (talk track, infra deployed, zero app code)
   * The demo audience is Ontario Public Sector IT leadership and developers
   * Lunch break happens at the 70-minute mark
 * Success Criteria:
@@ -488,6 +489,7 @@ These tags allow fast-forward recovery. If any phase runs long, skip to the next
 
 | Tag | Minute | Milestone | Recovery Note |
 |-----|--------|-----------|---------------|
+| v0.2.1 | 0 | Demo rehearsal starting point | Reset to this tag to rehearse demo from scratch |
 | v0.3.0 | 27 | Database schema complete | Can seed data manually if Flyway fails |
 | v0.4.0 | 40 | Backend scaffolding | Skip to v0.5.0 if short on time |
 | v0.5.0 | 50 | Backend API complete | Can demo API with curl |
@@ -496,6 +498,8 @@ These tags allow fast-forward recovery. If any phase runs long, skip to the next
 | v0.8.0 | 95 | Tests passing | Can skip if very tight on time |
 | v0.9.0 | 103 | CI verified | Quick pass, low risk |
 | v1.0.0 | 115 | Full app + live change | Final state |
+
+**Reset strategy:** To rehearse the demo from scratch, `git checkout v0.2.1` and start from minute 0.
 
 **Fast-forward strategy:** If a phase runs 5+ minutes over, `git stash && git checkout v{next_tag}` and narrate: "In the interest of time, let me jump to where this phase ends up." The audience still sees the result.
 

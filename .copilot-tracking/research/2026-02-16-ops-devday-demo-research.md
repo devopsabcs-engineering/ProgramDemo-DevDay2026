@@ -192,6 +192,7 @@ Each major milestone should be tagged so the demo can fast-forward if a step fai
 |-----|-----------|----------------|
 | `v0.1.0` | Repo scaffolding complete | copilot-instructions.md, path instructions, docs/ |
 | `v0.2.0` | Architecture and data dictionary | docs/architecture.md, docs/data-dictionary.md |
+| `v0.2.1` | Demo rehearsal starting point | Talk track, infra deployed, zero app code |
 | `v0.3.0` | Database schema loaded | database/migrations/V001-V003 |
 | `v0.4.0` | Backend API working (2 endpoints) | backend/ full Spring Boot project |
 | `v0.5.0` | Frontend scaffolding with Ontario DS | frontend/ with layout, i18n |
