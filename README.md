@@ -137,3 +137,39 @@ The CI pipeline should auto-increment the patch version on every merge to `main`
 
 Every GitHub Actions workflow should write relevant output to the **Job Summary** (`$GITHUB_STEP_SUMMARY`). Examples include deployed URLs after a CD run, test pass/fail counts and coverage percentages after CI, and infrastructure resource names after a Bicep deployment. Surfacing this information directly in the GitHub UI reduces context-switching and makes the demo more visible to observers.
 
+### Add GitHub Copilot Instructions Early
+
+Create `.github/copilot-instructions.md` and `.github/instructions/*.instructions.md` files before writing any code. At minimum include:
+
+- **ADO workflow instructions** — branching conventions (`feature/{id}-description`), commit message format (`AB#{id}`), PR linking (`Fixes AB#{id}`), and post-merge cleanup steps. This ensures every Copilot-generated commit and branch follows the project's Azure DevOps integration rules automatically.
+- **Tech stack instructions** — coding standards for each layer (React/TypeScript, Java/Spring Boot, SQL, CI/CD). These guide Copilot to produce code that matches the project's conventions (e.g., Ontario Design System classes, bilingual i18next keys, Spring Data JPA patterns) without repeated prompting.
+
+Without these files, Copilot lacks project context and produces generic code that requires manual correction.
+
+### Configure MCP for Azure DevOps Integration
+
+Set up `.vscode/mcp.json` at the start of the project so VS Code and Copilot can communicate with Azure DevOps directly. This enables work item discovery and test plan management without leaving the editor. A typical configuration points to the ADO organization and project:
+
+```json
+{
+  "servers": {
+    "ado": {
+      "type": "stdio",
+      "command": "...",
+      "args": ["--organization", "MngEnvMCAP675646", "--project", "ProgramDemo-DevDay2026"]
+    }
+  }
+}
+```
+
+Without MCP configured early, developers lose the ability to pull user stories and manage test plans through Copilot — forcing manual context-switching to the Azure DevOps web portal.
+
+### Embrace Azure DevOps and GitHub Better Together
+
+This project follows a **better together** model where Azure DevOps and GitHub each handle what they do best:
+
+- **Azure DevOps** — work item tracking (Epics, Features, User Stories, Bugs) and Test Plans. ADO provides structured boards, backlog management, and traceability.
+- **GitHub** — source code repository, pull requests, CI/CD workflows (GitHub Actions), and security (GitHub Advanced Security). GHAS provides Dependabot for dependency updates, secret scanning, and code scanning — capabilities that are native to the GitHub platform.
+
+Commits link back to ADO work items via `AB#{id}` syntax, and PRs auto-close work items with `Fixes AB#{id}`. This gives full traceability from ADO boards to GitHub commits while keeping code, reviews, pipelines, and security scanning in GitHub where they integrate seamlessly.
+
