@@ -113,20 +113,25 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Configure startup command
+      - name: Deploy to App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'app-${{ env.PREFIX }}-api-${{ inputs.environment }}-${{ inputs.instanceNumber }}'
+          package: backend-artifact
+
+      - name: Configure startup command and restart
         uses: azure/cli@v2
         with:
           inlineScript: |
             az webapp config set \
               --resource-group "${{ env.RESOURCE_GROUP }}" \
               --name "app-${{ env.PREFIX }}-api-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
-              --startup-file "java -Dserver.port=80 -Djdk.tls.client.protocols=TLSv1.2 -jar /home/site/wwwroot/program-demo-0.4.0-SNAPSHOT.jar"
-
-      - name: Deploy to App Service
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'app-${{ env.PREFIX }}-api-${{ inputs.environment }}-${{ inputs.instanceNumber }}'
-          package: backend-artifact
+              --startup-file "java -Dserver.port=80 -Djdk.tls.client.protocols=TLSv1.2 -jar /home/site/wwwroot/program-demo-0.4.0-SNAPSHOT.jar" \
+              --only-show-errors
+            az webapp restart \
+              --resource-group "${{ env.RESOURCE_GROUP }}" \
+              --name "app-${{ env.PREFIX }}-api-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
+              --only-show-errors
 
   deploy-frontend:
     name: Deploy Frontend
@@ -151,17 +156,22 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Configure startup command
+      - name: Deploy to App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'app-${{ env.PREFIX }}-web-${{ inputs.environment }}-${{ inputs.instanceNumber }}'
+          package: frontend-artifact
+
+      - name: Configure startup command and restart
         uses: azure/cli@v2
         with:
           inlineScript: |
             az webapp config set \
               --resource-group "${{ env.RESOURCE_GROUP }}" \
               --name "app-${{ env.PREFIX }}-web-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
-              --startup-file "pm2 serve /home/site/wwwroot --no-daemon --spa"
-
-      - name: Deploy to App Service
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: 'app-${{ env.PREFIX }}-web-${{ inputs.environment }}-${{ inputs.instanceNumber }}'
-          package: frontend-artifact
+              --startup-file "pm2 serve /home/site/wwwroot --no-daemon --spa" \
+              --only-show-errors
+            az webapp restart \
+              --resource-group "${{ env.RESOURCE_GROUP }}" \
+              --name "app-${{ env.PREFIX }}-web-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
+              --only-show-errors
