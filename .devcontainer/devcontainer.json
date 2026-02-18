@@ -4,7 +4,7 @@
 
   "features": {
     "ghcr.io/devcontainers/features/java:1": {
-      "version": "21",
+      "version": "17",
       "installMaven": "true",
       "installGradle": "false"
     },
@@ -44,7 +44,7 @@
       "settings": {
         "java.configuration.runtimes": [
           {
-            "name": "JavaSE-21",
+            "name": "JavaSE-17",
             "path": "/usr/local/sdkman/candidates/java/current",
             "default": true
           }
