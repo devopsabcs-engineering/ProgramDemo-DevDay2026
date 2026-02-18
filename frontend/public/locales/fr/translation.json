@@ -1,0 +1,99 @@
+{
+  "app": {
+    "title": "Approbation des programmes OPS",
+    "skipToContent": "Passer au contenu principal"
+  },
+  "header": {
+    "title": "Services de programmes de l'Ontario",
+    "nav": {
+      "submit": "Soumettre un programme",
+      "search": "Rechercher des programmes",
+      "review": "Examen ministériel"
+    }
+  },
+  "footer": {
+    "copyright": "© Imprimeur du Roi pour l'Ontario, 2026",
+    "accessibility": "Accessibilité",
+    "privacy": "Confidentialité",
+    "terms": "Conditions d'utilisation"
+  },
+  "language": {
+    "toggle": "English",
+    "label": "Sélectionner la langue"
+  },
+  "submit": {
+    "title": "Soumettre une demande de programme",
+    "description": "Utilisez ce formulaire pour soumettre une nouvelle demande de programme pour examen ministériel.",
+    "programName": "Nom du programme",
+    "programNamePlaceholder": "Entrez le nom du programme",
+    "programDescription": "Description du programme",
+    "programDescriptionPlaceholder": "Décrivez le programme en détail",
+    "programType": "Type de programme",
+    "programTypeSelect": "Sélectionnez un type de programme",
+    "submittedBy": "Votre courriel",
+    "submittedByPlaceholder": "Entrez votre adresse courriel",
+    "documentUrl": "URL du document justificatif (facultatif)",
+    "documentUrlPlaceholder": "https://exemple.com/document.pdf",
+    "submitButton": "Soumettre la demande",
+    "submitting": "Soumission en cours...",
+    "required": "obligatoire"
+  },
+  "confirmation": {
+    "title": "Soumission reçue",
+    "message": "Votre demande de programme a été soumise avec succès.",
+    "referenceNumber": "Numéro de référence",
+    "programName": "Nom du programme",
+    "status": "Statut",
+    "submittedDate": "Date de soumission",
+    "nextSteps": "Prochaines étapes",
+    "nextStepsDescription": "Un employé du ministère examinera votre soumission. Vous serez informé de la décision par courriel.",
+    "submitAnother": "Soumettre une autre demande",
+    "viewPrograms": "Voir tous les programmes"
+  },
+  "search": {
+    "title": "Rechercher des programmes",
+    "description": "Recherchez et consultez les soumissions de programmes.",
+    "searchPlaceholder": "Rechercher par nom de programme...",
+    "searchButton": "Rechercher",
+    "clearButton": "Effacer",
+    "noResults": "Aucun programme trouvé.",
+    "loading": "Chargement des programmes...",
+    "error": "Une erreur s'est produite lors du chargement des programmes.",
+    "retry": "Réessayer",
+    "table": {
+      "id": "ID",
+      "name": "Nom du programme",
+      "type": "Type",
+      "status": "Statut",
+      "submittedBy": "Soumis par",
+      "date": "Date",
+      "actions": "Actions",
+      "view": "Voir les détails"
+    }
+  },
+  "status": {
+    "DRAFT": "Brouillon",
+    "SUBMITTED": "Soumis",
+    "UNDER_REVIEW": "En cours d'examen",
+    "APPROVED": "Approuvé",
+    "REJECTED": "Rejeté"
+  },
+  "programType": {
+    "1": "Santé",
+    "2": "Éducation",
+    "3": "Infrastructure",
+    "4": "Services sociaux",
+    "5": "Environnement"
+  },
+  "validation": {
+    "programNameRequired": "Le nom du programme est obligatoire.",
+    "programDescriptionRequired": "La description du programme est obligatoire.",
+    "programTypeRequired": "Veuillez sélectionner un type de programme.",
+    "emailInvalid": "Veuillez entrer une adresse courriel valide."
+  },
+  "error": {
+    "generic": "Une erreur s'est produite. Veuillez réessayer.",
+    "notFound": "La ressource demandée est introuvable.",
+    "network": "Impossible de se connecter au serveur. Veuillez vérifier votre connexion."
+  }
+}
