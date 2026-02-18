@@ -140,3 +140,4 @@ jobs:
         with:
           app-name: 'app-${{ env.PREFIX }}-web-${{ inputs.environment }}'
           package: frontend-artifact
+          startup-command: 'pm2 serve /home/site/wwwroot --no-daemon --spa'
