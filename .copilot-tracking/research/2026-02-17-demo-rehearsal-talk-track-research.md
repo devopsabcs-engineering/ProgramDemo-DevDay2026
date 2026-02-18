@@ -86,7 +86,11 @@ RFC 7807 ProblemDetail error format. Spring Data JPA. @Valid annotations. Respon
 
 ### Frontend Design (from design-document.md)
 
-React + TypeScript + Vite. Ontario Design System CSS-only. i18next for EN/FR. react-router for navigation. WCAG 2.2 Level AA. Functional components with hooks.
+React + TypeScript + Vite. Ontario Design System component library (`@ongov/ontario-design-system-component-library`) for React components. i18next for EN/FR. react-router for navigation. WCAG 2.2 Level AA. Functional components with hooks.
+
+**Design-First Workflow:** Figma wireframes → Copilot generates React code → Ontario Design System components applied automatically.
+
+**Ontario Design System Developer Docs:** https://designsystem.ontario.ca/docs/documentation/develop/for-developers.html
 
 ## Key Discoveries
 
@@ -145,23 +149,31 @@ The build order follows data flow direction (database → API → UI) which:
 | 5 | `backend/.../dto/ReviewRequest.java` | Review DTO | AB#1820 |
 | 6 | `backend/.../controller/ProgramController.java` (PUT review) | Review endpoint | AB#1820 |
 
-### Phase 4: Frontend Scaffolding + Citizen Portal (v0.6.0) — Stories: 1818, 1821, 1824, 1822, 1823, 1825
+### Phase 4: Figma Design + Frontend Scaffolding + Citizen Portal (v0.6.0) — Stories: 1818, 1821, 1824, 1822, 1823, 1825
 
-| Step | File | Description | Story |
-|------|------|-------------|-------|
-| 1 | `frontend/package.json` + Vite config | React project setup | AB#1818 |
-| 2 | `frontend/public/locales/en/translation.json` | English translations | AB#1824 |
-| 3 | `frontend/public/locales/fr/translation.json` | French translations | AB#1824 |
-| 4 | `frontend/src/i18n.ts` | i18next configuration | AB#1824 |
-| 5 | `frontend/src/components/layout/Header.tsx` | Ontario header | AB#1821 |
-| 6 | `frontend/src/components/layout/Footer.tsx` | Ontario footer | AB#1821 |
-| 7 | `frontend/src/components/layout/Layout.tsx` | Page layout wrapper | AB#1821 |
-| 8 | `frontend/src/components/common/LanguageToggle.tsx` | EN/FR toggle | AB#1824 |
-| 9 | `frontend/src/pages/SubmitProgram.tsx` | Submission form | AB#1822 |
-| 10 | `frontend/src/pages/SubmitConfirmation.tsx` | Confirmation page | AB#1823 |
-| 11 | `frontend/src/pages/SearchPrograms.tsx` | Search/list page | AB#1825 |
-| 12 | `frontend/src/services/api.ts` | API service layer | — |
-| 13 | `frontend/src/App.tsx` | Router setup | — |
+**Design-First Approach:** Create Figma wireframes, then generate React code using Ontario Design System components.
+
+**Ontario Design System Reference:** https://designsystem.ontario.ca/docs/documentation/develop/for-developers.html
+
+| Step | Tool/File | Description | Story |
+|------|-----------|-------------|-------|
+| 1 | **Figma** | Create wireframe: Program Submission Form (header, form fields, footer) | — |
+| 2 | **Figma** | Create wireframe: Confirmation Page (success message, summary) | — |
+| 3 | **Figma** | Create wireframe: Search/List Page (search input, results table, status badges) | — |
+| 4 | **Ontario DS Docs** | Reference component library installation and available React components | — |
+| 5 | `frontend/package.json` + Vite config | React project setup with `@ongov/ontario-design-system-component-library` | AB#1818 |
+| 6 | **Copilot + Figma** | Generate `SubmitProgram.tsx` from Figma wireframe using Ontario DS components | AB#1822 |
+| 7 | `frontend/public/locales/en/translation.json` | English translations | AB#1824 |
+| 8 | `frontend/public/locales/fr/translation.json` | French translations | AB#1824 |
+| 9 | `frontend/src/i18n.ts` | i18next configuration | AB#1824 |
+| 10 | `frontend/src/components/layout/Header.tsx` | Ontario header using `OntarioHeader` component | AB#1821 |
+| 11 | `frontend/src/components/layout/Footer.tsx` | Ontario footer using `OntarioFooter` component | AB#1821 |
+| 12 | `frontend/src/components/layout/Layout.tsx` | Page layout wrapper | AB#1821 |
+| 13 | `frontend/src/components/common/LanguageToggle.tsx` | EN/FR toggle | AB#1824 |
+| 14 | `frontend/src/pages/SubmitConfirmation.tsx` | Confirmation page (from Figma wireframe) | AB#1823 |
+| 15 | `frontend/src/pages/SearchPrograms.tsx` | Search/list page (from Figma wireframe) | AB#1825 |
+| 16 | `frontend/src/services/api.ts` | API service layer | — |
+| 17 | `frontend/src/App.tsx` | Router setup | — |
 
 ### Phase 5: Ministry Portal (v0.7.0) — Stories: 1826, 1827, 1829
 
@@ -291,31 +303,113 @@ Add `program_budget` field end-to-end: migration → entity → DTO → API → 
 
 **[Pull Story 1818: Create React project with Ontario Design System]**
 
-> "Now the part the audience can see. Let's build the citizen-facing portal — and let's make it bilingual and accessible from the very first component."
+> "Now the part the audience can see. But before we write any React code, let's start where every great UI begins — with a design. We're going to use Figma to create our wireframes, then have Copilot generate production-ready React code from those designs using the official Ontario Design System."
+
+---
+
+##### Step 1: Design in Figma (Minutes 50–55)
+
+**[SWITCH TO: Figma in browser]**
+
+> "A picture is worth a thousand lines of code. Let's sketch out what our citizen portal should look like."
 
 **Demo actions:**
-- (min 50) Create React + TypeScript + Vite project: `npm create vite@latest . -- --template react-ts`
-- (min 51) Install dependencies: `npm install @ongov/ontario-design-system-global-styles react-router-dom i18next react-i18next axios`
-- (min 52) Create `i18n.ts` — Copilot generates full i18next config with language detection
-- (min 53) Create `public/locales/en/translation.json` — show keys for all UI strings
-- (min 54) Create `public/locales/fr/translation.json` — Copilot generates French translations
-- (min 55) Create `Header.tsx` — Ontario Design System header with official branding
-- (min 56) Create `Footer.tsx` — Ontario footer with required links
-- (min 57) Create `Layout.tsx` — wraps all pages in Ontario header/footer
-- (min 58) Create `LanguageToggle.tsx` — EN/FR button that updates lang attribute (WCAG 3.1.1)
+- (min 50) Open Figma — show a new file or pre-prepared Ontario Design System UI Kit
+- (min 51) **Create Program Submission Form wireframe:**
+  - Ontario header with official branding and language toggle
+  - Form with fields: Program Name, Program Type (dropdown), Description (textarea), Contact Email
+  - Submit button styled with Ontario button classes
+  - Ontario footer
+- (min 53) **Create Confirmation Page wireframe:**
+  - Success message with checkmark icon
+  - Summary of submitted program details
+  - "Submit Another" and "View Programs" navigation links
+- (min 54) **Create Search/List Page wireframe:**
+  - Search input with Ontario styling
+  - Results table with columns: Program Name, Type, Status, Submitted Date
+  - Status badges (Draft, Submitted, Approved, Rejected)
+- (min 55) **Export/Screenshot:** Save the Figma frames as reference images or copy the Figma share link
+
+**Key beat:**
+> "We now have a visual contract. The stakeholder can see exactly what we're building. And more importantly, Copilot can see it too."
+
+---
+
+##### Step 2: Reference Ontario Design System Documentation (Minute 55)
+
+**[SWITCH TO: Browser — Ontario Design System Developer Docs]**
+
+> "Before we generate code, let's ground Copilot in the official Ontario Design System. This ensures our React components use the correct classes, patterns, and accessibility standards."
+
+**Demo actions:**
+- (min 55) Open https://designsystem.ontario.ca/docs/documentation/develop/for-developers.html
+- Show key sections:
+  - **Installation:** `npm install @ongov/ontario-design-system-component-library` for React components
+  - **CSS-only approach:** `@ongov/ontario-design-system-global-styles` for styled HTML
+  - **React components available:** Buttons, Forms, Headers, Footers, Inputs, Hints, Error messages
+  - **WCAG 2.2 Level AA compliance** built into all components
+
+> "The Ontario Design System gives us production-ready React components. We'll point Copilot to these docs so it generates code that matches the official patterns."
+
+---
+
+##### Step 3: Generate React from Figma + Ontario DS (Minutes 55–58)
+
+**[SWITCH TO: VS Code]**
+
+> "Now let's have Copilot turn our Figma designs into React code, using the Ontario Design System components."
+
+**Demo actions:**
+- (min 55) Create React + TypeScript + Vite project: `npm create vite@latest . -- --template react-ts`
+- (min 56) Install Ontario Design System dependencies:
+  ```bash
+  npm install @ongov/ontario-design-system-component-library @ongov/ontario-design-system-global-styles react-router-dom i18next react-i18next axios
+  ```
+- (min 56) **Copilot Chat prompt (with Figma screenshot attached or described):**
+  > "Based on this Figma wireframe for a government program submission form, generate a React component using the Ontario Design System component library from https://designsystem.ontario.ca/docs/documentation/develop/for-developers.html. Use OntarioHeader, OntarioFooter, OntarioButton, OntarioInput, OntarioTextarea, and OntarioDropdownList components. Ensure WCAG 2.2 Level AA compliance with proper aria-labels and error handling."
+- (min 57) Show Copilot generating `SubmitProgram.tsx` with:
+  - `import { OntarioButton, OntarioInput, OntarioTextarea } from '@ongov/ontario-design-system-component-library'`
+  - Proper form structure matching the Figma wireframe
+  - Ontario CSS classes applied automatically
+  - Accessibility attributes (aria-describedby, aria-invalid, etc.)
+
+**Key beat:**
+> "Notice what just happened. Copilot didn't just write generic React. It looked at our Figma design, referenced the Ontario Design System documentation, and generated components that match Ontario government standards. That's design-to-code in under 3 minutes."
+
+---
+
+##### Step 4: Build Supporting Components (Minutes 58–65)
+
+**Demo actions:**
+- (min 58) Create `i18n.ts` — Copilot generates full i18next config with language detection
+- (min 58) Create `public/locales/en/translation.json` — show keys for all UI strings
+- (min 59) Create `public/locales/fr/translation.json` — Copilot generates French translations
+- (min 59) Create `Header.tsx` — uses `OntarioHeader` component from Ontario DS
+- (min 60) Create `Footer.tsx` — uses `OntarioFooter` component from Ontario DS
+- (min 60) Create `Layout.tsx` — wraps all pages in Ontario header/footer
+- (min 61) Create `LanguageToggle.tsx` — EN/FR button that updates lang attribute (WCAG 3.1.1)
 
 **[Pull Story 1822: Build program submission form]**
 
-- (min 59) Create `SubmitProgram.tsx` — the form
-- (min 60) **KEY DEMO MOMENT:** Show Copilot generating the form with Ontario CSS classes, aria-labels, error identification (WCAG 3.3.1), autocomplete attributes — all from react.instructions.md
-- (min 62) Create `api.ts` service — connects to backend
-- (min 63) Create `SubmitConfirmation.tsx` (Story 1823)
-- (min 64) Create `SearchPrograms.tsx` (Story 1825) — list/search page
+- (min 61) Refine `SubmitProgram.tsx` — the form generated from Figma, add validation
+- (min 62) **KEY DEMO MOMENT:** Show Copilot enhancing the form with Ontario DS form validation patterns, aria-labels, error identification (WCAG 3.3.1), autocomplete attributes — all from react.instructions.md + Ontario DS docs
+- (min 63) Create `api.ts` service — connects to backend
+- (min 63) Create `SubmitConfirmation.tsx` (Story 1823) — based on Figma confirmation wireframe
+- (min 64) Create `SearchPrograms.tsx` (Story 1825) — based on Figma list/search wireframe
 - (min 65) Create `App.tsx` with react-router routes
-- (min 66) **LIVE DEMO:** Open browser → navigate to form → fill in program → submit → see confirmation
+
+---
+
+##### Step 5: Live Demo & Validation (Minutes 65–70)
+
+- (min 65) **LIVE DEMO:** Open browser → navigate to form → compare to Figma wireframe → they match!
+- (min 66) Fill in program → submit → see confirmation page (matches Figma)
 - (min 67) **LIVE DEMO (continued):** Switch language to French → show entire UI in French → submit another program
 - (min 68) **LIVE DEMO (continued):** Check database — show both submissions persisted in Azure SQL
 - (min 69) Commit: `feat(ui): add citizen portal with Ontario DS and bilingual support AB#1818 AB#1821 AB#1822 AB#1823 AB#1824 AB#1825`
+
+**Audience engagement point (min 70):**
+> "We started with a Figma wireframe — a visual idea of what we wanted. We pointed Copilot at the Ontario Design System documentation. And in 20 minutes, we have a production-quality React application with official Ontario branding, bilingual support, and WCAG 2.2 accessibility. That's design-to-deployed in a single demo session."
 
 ---
 
