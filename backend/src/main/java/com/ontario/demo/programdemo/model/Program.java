@@ -42,7 +42,7 @@ public class Program {
     private String programName;
 
     /** Detailed description of the program request. */
-    @Column(name = "program_description", nullable = false, columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "program_description", nullable = false, length = 4000)
     private String programDescription;
 
     /** Reference to the program type lookup table. */
@@ -64,7 +64,7 @@ public class Program {
     private String reviewedBy;
 
     /** Comments added by the reviewer during approval or rejection. */
-    @Column(name = "review_comments", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "review_comments", length = 4000)
     private String reviewComments;
 
     /** URL to the uploaded supporting document. */
