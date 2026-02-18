@@ -26,6 +26,9 @@ resource webApp 'Microsoft.Web/sites@2024-04-01' = {
   name: 'app-${config.prefix}-${appSuffix}-${config.environment}'
   location: config.location
   tags: config.tags
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
     serverFarmId: appServicePlanId
     httpsOnly: true
@@ -49,3 +52,6 @@ output name string = webApp.name
 
 @description('The default hostname of the web app.')
 output defaultHostName string = webApp.properties.defaultHostName
+
+@description('The principal ID of the system-assigned managed identity.')
+output principalId string = webApp.identity.principalId

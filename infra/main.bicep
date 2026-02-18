@@ -106,3 +106,6 @@ output functionAppUrl string = functionApp.outputs.defaultHostName
 
 @description('The name of the Logic App.')
 output logicAppName string = logicApp.outputs.name
+
+@description('The principal ID of the backend API managed identity.')
+output backendPrincipalId string = backendApp.outputs.principalId
