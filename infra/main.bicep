@@ -41,7 +41,7 @@ module backendApp './modules/web-app.bicep' = {
     config: config
     appSuffix: 'api'
     appServicePlanId: appServicePlan.outputs.id
-    linuxFxVersion: 'JAVA|21-java21'
+    linuxFxVersion: 'JAVA|17-java17'
     appSettings: [
       {
         name: 'SPRING_DATASOURCE_URL'

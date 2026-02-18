@@ -7,7 +7,7 @@ employees review them through an internal portal.
 
 ## Tech Stack
 - **Frontend:** React with TypeScript, Vite, i18next for EN/FR bilingual support
-- **Backend:** Java 21, Spring Boot 3.x, Maven
+- **Backend:** Java 17, Spring Boot 3.x, Maven
 - **Database:** Azure SQL
 - **Cloud:** Azure App Service, Durable Functions, Logic Apps, AI Foundry
 - **CI/CD:** GitHub Actions
