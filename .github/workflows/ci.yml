@@ -15,7 +15,6 @@ jobs:
   backend-ci:
     name: Backend Build & Test
     runs-on: ubuntu-latest
-    if: hashFiles('backend/pom.xml') != ''
     permissions:
       contents: read
     timeout-minutes: 30
@@ -39,7 +38,6 @@ jobs:
   frontend-ci:
     name: Frontend Build & Test
     runs-on: ubuntu-latest
-    if: hashFiles('frontend/package.json') != ''
     permissions:
       contents: read
     timeout-minutes: 30
