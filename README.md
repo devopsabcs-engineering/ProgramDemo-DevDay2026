@@ -123,7 +123,7 @@ Waiting until a dedicated QA phase to write tests delays feedback on regressions
 
 ### Generate a Research Plan and Talk Track Up Front
 
-Before building, use Copilot to generate a structured research plan that maps each demo phase to time estimates, deliverables, and talking points. A pre-built talk track keeps the live session on pace and ensures no phase is skipped or rushed. Store the plan in `.copilot-tracking/research/` for easy reference.
+Before building, use Copilot to generate a structured research plan that maps each demo phase to time estimates, deliverables, and talking points. A pre-built talk track keeps the live session on pace and ensures no phase is skipped or rushed. Plan for an appropriate cliffhanger at the 70-minute mark (just before the lunch break) — leave the audience with a compelling "what's next" moment, such as a partially deployed application or a live change about to land, so they return eager to see the conclusion. Store the plan in `.copilot-tracking/research/` for easy reference.
 
 ### Use H2 for Local Development and Testing
 
