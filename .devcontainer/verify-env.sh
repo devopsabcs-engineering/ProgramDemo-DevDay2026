@@ -10,9 +10,9 @@ PASS=0
 FAIL=0
 WARN=0
 
-pass() { echo "  ✅ $1"; ((PASS++)); }
-fail() { echo "  ❌ $1"; ((FAIL++)); }
-warn() { echo "  ⚠️  $1"; ((WARN++)); }
+pass() { echo "  ✅ $1"; ((PASS++)) || true; }
+fail() { echo "  ❌ $1"; ((FAIL++)) || true; }
+warn() { echo "  ⚠️  $1"; ((WARN++)) || true; }
 
 check_command() {
   local cmd="$1"
