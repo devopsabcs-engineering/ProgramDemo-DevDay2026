@@ -1,0 +1,99 @@
+{
+  "app": {
+    "title": "OPS Program Approval",
+    "skipToContent": "Skip to main content"
+  },
+  "header": {
+    "title": "Ontario Program Services",
+    "nav": {
+      "submit": "Submit Program",
+      "search": "Search Programs",
+      "review": "Ministry Review"
+    }
+  },
+  "footer": {
+    "copyright": "© King's Printer for Ontario, 2026",
+    "accessibility": "Accessibility",
+    "privacy": "Privacy",
+    "terms": "Terms of use"
+  },
+  "language": {
+    "toggle": "Français",
+    "label": "Select language"
+  },
+  "submit": {
+    "title": "Submit a Program Request",
+    "description": "Use this form to submit a new program request for ministry review.",
+    "programName": "Program Name",
+    "programNamePlaceholder": "Enter the program name",
+    "programDescription": "Program Description",
+    "programDescriptionPlaceholder": "Describe the program in detail",
+    "programType": "Program Type",
+    "programTypeSelect": "Select a program type",
+    "submittedBy": "Your Email",
+    "submittedByPlaceholder": "Enter your email address",
+    "documentUrl": "Supporting Document URL (optional)",
+    "documentUrlPlaceholder": "https://example.com/document.pdf",
+    "submitButton": "Submit Request",
+    "submitting": "Submitting...",
+    "required": "required"
+  },
+  "confirmation": {
+    "title": "Submission Received",
+    "message": "Your program request has been submitted successfully.",
+    "referenceNumber": "Reference Number",
+    "programName": "Program Name",
+    "status": "Status",
+    "submittedDate": "Submitted Date",
+    "nextSteps": "What happens next?",
+    "nextStepsDescription": "A ministry employee will review your submission. You will be notified of the decision by email.",
+    "submitAnother": "Submit Another Request",
+    "viewPrograms": "View All Programs"
+  },
+  "search": {
+    "title": "Search Programs",
+    "description": "Search and view program submissions.",
+    "searchPlaceholder": "Search by program name...",
+    "searchButton": "Search",
+    "clearButton": "Clear",
+    "noResults": "No programs found.",
+    "loading": "Loading programs...",
+    "error": "An error occurred while loading programs.",
+    "retry": "Try Again",
+    "table": {
+      "id": "ID",
+      "name": "Program Name",
+      "type": "Type",
+      "status": "Status",
+      "submittedBy": "Submitted By",
+      "date": "Date",
+      "actions": "Actions",
+      "view": "View Details"
+    }
+  },
+  "status": {
+    "DRAFT": "Draft",
+    "SUBMITTED": "Submitted",
+    "UNDER_REVIEW": "Under Review",
+    "APPROVED": "Approved",
+    "REJECTED": "Rejected"
+  },
+  "programType": {
+    "1": "Health",
+    "2": "Education",
+    "3": "Infrastructure",
+    "4": "Social Services",
+    "5": "Environment"
+  },
+  "validation": {
+    "programNameRequired": "Program name is required.",
+    "programDescriptionRequired": "Program description is required.",
+    "programTypeRequired": "Please select a program type.",
+    "emailInvalid": "Please enter a valid email address."
+  },
+  "error": {
+    "generic": "Something went wrong. Please try again.",
+    "notFound": "The requested resource was not found.",
+    "network": "Unable to connect to the server. Please check your connection."
+  }
+}
