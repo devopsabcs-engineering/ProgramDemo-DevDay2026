@@ -111,6 +111,7 @@ jobs:
         with:
           app-name: 'app-${{ env.PREFIX }}-api-${{ inputs.environment }}'
           package: backend-artifact
+          startup-command: 'java -Dserver.port=80 -jar /home/site/wwwroot/program-demo-0.4.0-SNAPSHOT.jar'
 
   deploy-frontend:
     name: Deploy Frontend
