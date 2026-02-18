@@ -117,9 +117,9 @@ Define a `.devcontainer/devcontainer.json` that includes Java 21, Node 20, Maven
 
 Initialize `.gitignore` with combined rules for Java (`target/`, `*.class`), Node/npm (`node_modules/`, `dist/`), and IDE files (`.idea/`, `.vscode/settings.json`) before the first commit. Retroactively cleaning tracked build artifacts wastes demo time and creates noisy diffs.
 
-### Introduce Testing Earlier Than Phase 6
+### Introduce Testing Alongside Features
 
-Waiting until a dedicated QA phase to write tests delays feedback on regressions. Add unit tests alongside each feature phase (backend tests with the API, frontend tests with the portal). This keeps coverage incremental, catches issues sooner, and demonstrates a shift-left testing culture during the demo.
+Avoid deferring all testing to a late QA phase. Add unit tests alongside each feature phase (backend tests with the API, frontend tests with the portal). This keeps coverage incremental, catches issues sooner, and demonstrates a shift-left testing culture during the demo.
 
 ### Generate a Research Plan and Talk Track Up Front
 
@@ -131,7 +131,7 @@ Configure a Spring Boot `local` profile with an H2 in-memory database so develop
 
 ### Auto-Version with Phase-Aware CI
 
-The CI pipeline should auto-increment the patch version on every merge to `main` and increment the minor version at each phase boundary. For example, database work ships as `v0.3.x`, backend scaffolding as `v0.4.x`, and so on. Automated versioning produces clear release milestones and eliminates manual tagging errors.
+The CI pipeline should auto-increment the patch version on every merge to `main` and increment the minor version at each phase boundary. Automated versioning produces clear release milestones and eliminates manual tagging errors.
 
 ### Surface Key Information in GitHub Workflow Summaries
 
