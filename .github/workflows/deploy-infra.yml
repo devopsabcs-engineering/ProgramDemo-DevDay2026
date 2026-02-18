@@ -15,6 +15,7 @@ on:
       resourceGroupName:
         description: 'Azure resource group name'
         required: true
+        default: 'rg-dev-111'
         type: string
       resourceGroupLocation:
         description: 'Azure region for the resource group'
