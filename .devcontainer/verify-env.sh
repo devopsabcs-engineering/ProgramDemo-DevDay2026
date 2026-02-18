@@ -54,7 +54,7 @@ fi
 # -----------------------------------------------------------
 echo "Maven:"
 if check_command mvn "Maven"; then
-  MVN_VER=$(mvn --version 2>&1 | head -1 | sed 's/Apache Maven \([^ ]*\).*/\1/')
+  MVN_VER=$(mvn --version 2>&1 | head -1 | sed 's/\x1b\[[0-9;]*m//g' | sed 's/Apache Maven \([^ ]*\).*/\1/')
   if [[ "$MVN_VER" == 3.* ]]; then
     pass "  Maven version $MVN_VER"
   else
