@@ -11,7 +11,7 @@ param config DeploymentConfig
 /* ─── Resources ─── */
 
 resource logicApp 'Microsoft.Logic/workflows@2019-05-01' = {
-  name: 'logic-${config.prefix}-notify-${config.environment}'
+  name: 'logic-${config.prefix}-notify-${config.environment}-${config.instanceNumber}'
   location: config.location
   tags: config.tags
   properties: {

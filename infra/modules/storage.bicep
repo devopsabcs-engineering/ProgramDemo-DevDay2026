@@ -11,7 +11,7 @@ param config DeploymentConfig
 /* ─── Variables ─── */
 
 @description('Globally unique storage account name derived from resource group.')
-var storageAccountName = take('st${replace(config.prefix, '-', '')}${config.environment}${uniqueString(resourceGroup().id)}', 24)
+var storageAccountName = take('st${replace(config.prefix, '-', '')}${config.environment}${config.instanceNumber}${uniqueString(resourceGroup().id)}', 24)
 
 /* ─── Resources ─── */
 

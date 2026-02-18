@@ -17,7 +17,7 @@ param databaseName string = 'programdb'
 /* ─── Resources ─── */
 
 resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' = {
-  name: 'sql-${config.prefix}-${config.environment}'
+  name: 'sql-${config.prefix}-${config.environment}-${config.instanceNumber}'
   location: config.location
   tags: config.tags
   properties: {

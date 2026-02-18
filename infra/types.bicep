@@ -16,6 +16,9 @@ type DeploymentConfig = {
   @description('Deployment environment.')
   environment: 'dev' | 'test' | 'prod'
 
+  @description('Instance number to distinguish parallel deployments.')
+  instanceNumber: string
+
   @description('Tags applied to all resources.')
   tags: object
 }
@@ -60,6 +63,7 @@ var deploymentDefaults = {
   prefix: 'ops-demo'
   location: 'canadacentral'
   environment: 'dev'
+  instanceNumber: '123'
   tags: {
     project: 'OPS-ProgramDemo'
     environment: 'dev'

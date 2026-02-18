@@ -17,7 +17,7 @@ param capacity int = 1
 /* ─── Resources ─── */
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2024-04-01' = {
-  name: 'asp-${config.prefix}-${config.environment}'
+  name: 'asp-${config.prefix}-${config.environment}-${config.instanceNumber}'
   location: config.location
   tags: config.tags
   kind: 'linux'

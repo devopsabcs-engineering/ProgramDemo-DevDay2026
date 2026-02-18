@@ -24,7 +24,7 @@ var storageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${stor
 /* ─── Resources ─── */
 
 resource consumptionPlan 'Microsoft.Web/serverfarms@2024-04-01' = {
-  name: 'asp-${config.prefix}-func-${config.environment}'
+  name: 'asp-${config.prefix}-func-${config.environment}-${config.instanceNumber}'
   location: config.location
   tags: config.tags
   kind: 'functionapp'
@@ -35,7 +35,7 @@ resource consumptionPlan 'Microsoft.Web/serverfarms@2024-04-01' = {
 }
 
 resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
-  name: 'func-${config.prefix}-${config.environment}'
+  name: 'func-${config.prefix}-${config.environment}-${config.instanceNumber}'
   location: config.location
   tags: config.tags
   kind: 'functionapp'

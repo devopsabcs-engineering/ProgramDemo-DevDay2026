@@ -12,10 +12,10 @@ on:
           - dev
           - test
           - prod
-      resourceGroupName:
-        description: 'Azure resource group name'
+      instanceNumber:
+        description: 'Instance number for resource naming'
         required: true
-        default: 'rg-dev-123'
+        default: '123'
         type: string
       resourceGroupLocation:
         description: 'Azure region for the resource group'
@@ -52,7 +52,7 @@ jobs:
         with:
           inlineScript: |
             az group create \
-              --name "${{ inputs.resourceGroupName }}" \
+              --name "rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
               --location "${{ inputs.resourceGroupLocation }}" \
               --only-show-errors
 
@@ -61,7 +61,7 @@ jobs:
         with:
           inlineScript: |
             az deployment group validate \
-              --resource-group "${{ inputs.resourceGroupName }}" \
+              --resource-group "rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
               --template-file "${{ env.BICEP_DIR }}/main.bicep" \
               --parameters "${{ env.BICEP_DIR }}/main.bicepparam"
 
@@ -70,7 +70,7 @@ jobs:
         with:
           inlineScript: |
             az deployment group what-if \
-              --resource-group "${{ inputs.resourceGroupName }}" \
+              --resource-group "rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
               --template-file "${{ env.BICEP_DIR }}/main.bicep" \
               --parameters "${{ env.BICEP_DIR }}/main.bicepparam"
 
@@ -99,7 +99,7 @@ jobs:
         with:
           inlineScript: |
             az group create \
-              --name "${{ inputs.resourceGroupName }}" \
+              --name "rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
               --location "${{ inputs.resourceGroupLocation }}" \
               --only-show-errors
 
@@ -111,7 +111,7 @@ jobs:
         with:
           inlineScript: |
             az deployment group create \
-              --resource-group "${{ inputs.resourceGroupName }}" \
+              --resource-group "rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
               --template-file "${{ env.BICEP_DIR }}/main.bicep" \
               --parameters "${{ env.BICEP_DIR }}/main.bicepparam" \
               --name "infra-$(date +%Y%m%d%H%M%S)"
@@ -121,8 +121,8 @@ jobs:
         with:
           inlineScript: |
             az deployment group show \
-              --resource-group "${{ inputs.resourceGroupName }}" \
+              --resource-group "rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
               --name "$(az deployment group list \
-                --resource-group '${{ inputs.resourceGroupName }}' \
+                --resource-group 'rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}' \
                 --query '[0].name' -o tsv)" \
               --query properties.outputs

@@ -23,7 +23,7 @@ param appSettings array = []
 /* ─── Resources ─── */
 
 resource webApp 'Microsoft.Web/sites@2024-04-01' = {
-  name: 'app-${config.prefix}-${appSuffix}-${config.environment}'
+  name: 'app-${config.prefix}-${appSuffix}-${config.environment}-${config.instanceNumber}'
   location: config.location
   tags: config.tags
   identity: {
