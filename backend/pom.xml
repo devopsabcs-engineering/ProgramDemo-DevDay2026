@@ -57,11 +57,11 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- MSAL4J for Azure AD authentication with SQL Server -->
+        <!-- Azure Identity for Azure AD authentication with SQL Server -->
         <dependency>
-            <groupId>com.microsoft.azure</groupId>
-            <artifactId>msal4j</artifactId>
-            <version>1.17.2</version>
+            <groupId>com.azure</groupId>
+            <artifactId>azure-identity</artifactId>
+            <version>1.15.4</version>
             <scope>runtime</scope>
         </dependency>
 
