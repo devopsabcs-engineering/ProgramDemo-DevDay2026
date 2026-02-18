@@ -439,7 +439,7 @@ Add `program_budget` field end-to-end: migration → entity → DTO → API → 
 - (min 108) Update `ReviewDetail.tsx` — show budget in review
 - (min 109) Update `en/translation.json` and `fr/translation.json` — add budget labels
 - (min 110) Update `ProgramControllerTest.java` — add budget to test data
-- (min 111) Update `SubmitProgram.test.tsx` — test budget field rendering and accessibility
+- (min 123) Update `SubmitProgram.test.tsx` — test budget field rendering and accessibility
 - (min 112) **Run all tests:** Backend + frontend — all green
 - (min 113) **Live:** Submit a program with budget → review it → see budget displayed
 - (min 114) Commit: `feat: add program budget field end-to-end Fixes AB#1838 Fixes AB#1840`

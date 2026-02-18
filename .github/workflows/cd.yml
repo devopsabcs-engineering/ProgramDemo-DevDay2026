@@ -17,7 +17,7 @@ permissions: {}
 
 env:
   PREFIX: ops-demo
-  RESOURCE_GROUP: rg-dev-111
+  RESOURCE_GROUP: rg-dev-123
 
 jobs:
   build-backend:
