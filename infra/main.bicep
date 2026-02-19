@@ -34,6 +34,13 @@ module appServicePlan './modules/app-service-plan.bicep' = {
   }
 }
 
+module containerRegistry './modules/container-registry.bicep' = {
+  params: {
+    config: config
+    skuName: 'Basic'
+  }
+}
+
 /* ─── Modules: Web Applications ─── */
 
 module backendApp './modules/web-app.bicep' = {
@@ -41,7 +48,10 @@ module backendApp './modules/web-app.bicep' = {
     config: config
     appSuffix: 'api'
     appServicePlanId: appServicePlan.outputs.id
-    linuxFxVersion: 'JAVA|21-java21'
+    linuxFxVersion: 'DOCKER|${containerRegistry.outputs.loginServer}/program-demo-api:latest'
+    dockerRegistryServerUrl: 'https://${containerRegistry.outputs.loginServer}'
+    dockerRegistryUsername: containerRegistry.outputs.name
+    dockerRegistryPassword: listCredentials(containerRegistry.outputs.id, '2023-11-01-preview').passwords[0].value
     appSettings: [
       {
         name: 'SPRING_DATASOURCE_URL'
@@ -54,6 +64,10 @@ module backendApp './modules/web-app.bicep' = {
       {
         name: 'SPRING_DATASOURCE_PASSWORD'
         value: ''
+      }
+      {
+        name: 'WEBSITES_PORT'
+        value: '8080'
       }
     ]
   }
@@ -117,3 +131,9 @@ output logicAppName string = logicApp.outputs.name
 
 @description('The principal ID of the backend API managed identity.')
 output backendPrincipalId string = backendApp.outputs.principalId
+
+@description('The login server of the container registry.')
+output acrLoginServer string = containerRegistry.outputs.loginServer
+
+@description('The name of the container registry.')
+output acrName string = containerRegistry.outputs.name

@@ -14,11 +14,45 @@ param appSuffix string
 @description('Resource ID of the App Service Plan to host this web app.')
 param appServicePlanId string
 
-@description('Runtime stack for the web app (e.g., JAVA|21-java21, NODE|20-lts).')
+@description('Runtime stack for the web app (e.g., JAVA|21-java21, NODE|20-lts, DOCKER|<registry>/<image>:<tag>).')
 param linuxFxVersion string
 
 @description('Application settings as key-value pairs.')
 param appSettings array = []
+
+@description('Docker registry server URL (e.g., https://myacr.azurecr.io). Leave empty for non-container deployments.')
+param dockerRegistryServerUrl string = ''
+
+@description('Docker registry username. Leave empty for non-container deployments.')
+param dockerRegistryUsername string = ''
+
+@description('Docker registry password. Leave empty for non-container deployments.')
+@secure()
+param dockerRegistryPassword string = ''
+
+/* ─── Variables ─── */
+
+// Merge Docker registry settings into app settings when using a container image
+var dockerSettings = !empty(dockerRegistryServerUrl) ? [
+  {
+    name: 'DOCKER_REGISTRY_SERVER_URL'
+    value: dockerRegistryServerUrl
+  }
+  {
+    name: 'DOCKER_REGISTRY_SERVER_USERNAME'
+    value: dockerRegistryUsername
+  }
+  {
+    name: 'DOCKER_REGISTRY_SERVER_PASSWORD'
+    value: dockerRegistryPassword
+  }
+  {
+    name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'
+    value: 'false'
+  }
+] : []
+
+var allAppSettings = concat(appSettings, dockerSettings)
 
 /* ─── Resources ─── */
 
@@ -37,7 +71,7 @@ resource webApp 'Microsoft.Web/sites@2024-04-01' = {
       alwaysOn: true
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
-      appSettings: appSettings
+      appSettings: allAppSettings
     }
   }
 }
