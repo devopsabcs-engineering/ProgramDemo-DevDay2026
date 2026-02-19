@@ -47,6 +47,14 @@ module backendApp './modules/web-app.bicep' = {
         name: 'SPRING_DATASOURCE_URL'
         value: sqlServer.outputs.jdbcConnectionString
       }
+      {
+        name: 'SPRING_DATASOURCE_USERNAME'
+        value: ''
+      }
+      {
+        name: 'SPRING_DATASOURCE_PASSWORD'
+        value: ''
+      }
     ]
   }
 }
