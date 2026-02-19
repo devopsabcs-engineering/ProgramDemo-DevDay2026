@@ -50,8 +50,8 @@ module backendApp './modules/web-app.bicep' = {
     appServicePlanId: appServicePlan.outputs.id
     linuxFxVersion: 'DOCKER|${containerRegistry.outputs.loginServer}/program-demo-api:latest'
     dockerRegistryServerUrl: 'https://${containerRegistry.outputs.loginServer}'
-    dockerRegistryUsername: containerRegistry.outputs.name
-    dockerRegistryPassword: listCredentials(containerRegistry.outputs.id, '2023-11-01-preview').passwords[0].value
+    dockerRegistryUsername: containerRegistry.outputs.adminUsername
+    dockerRegistryPassword: containerRegistry.outputs.adminPassword
     appSettings: [
       {
         name: 'SPRING_DATASOURCE_URL'

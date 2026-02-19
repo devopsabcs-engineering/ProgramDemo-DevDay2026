@@ -46,3 +46,10 @@ output name string = containerRegistry.name
 
 @description('The login server of the container registry.')
 output loginServer string = containerRegistry.properties.loginServer
+
+@description('The admin username for the container registry.')
+output adminUsername string = containerRegistry.listCredentials().username
+
+@description('The first admin password for the container registry.')
+#disable-next-line outputs-should-not-contain-secrets
+output adminPassword string = containerRegistry.listCredentials().passwords[0].value
