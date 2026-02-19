@@ -126,7 +126,7 @@ jobs:
             az webapp config set \
               --resource-group "${{ env.RESOURCE_GROUP }}" \
               --name "app-${{ env.PREFIX }}-api-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
-              --startup-file "java -Dserver.port=80 -Djdk.tls.client.protocols=TLSv1.2 -jar /home/site/wwwroot/program-demo-0.4.0-SNAPSHOT.jar" \
+              --startup-file "java -Dserver.port=80 -jar /home/site/wwwroot/program-demo-0.4.0-SNAPSHOT.jar" \
               --only-show-errors
             az webapp restart \
               --resource-group "${{ env.RESOURCE_GROUP }}" \
