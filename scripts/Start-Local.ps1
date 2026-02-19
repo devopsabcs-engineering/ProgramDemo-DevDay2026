@@ -18,9 +18,19 @@
 .PARAMETER FrontendOnly
     Start only the frontend service.
 
+.PARAMETER UseAzureSql
+    Connect the backend to the real Azure SQL Database instead of the local
+    H2 in-memory database. Uses the 'azuresql' Spring profile with
+    ActiveDirectoryDefault authentication (your current Azure CLI login).
+
+    Prerequisites:
+      - You must be logged in to Azure CLI (az login).
+      - Your AAD user must be in the SQL admin group (azureSqlDBAdmins).
+      - Your client IP must be allowed through the Azure SQL firewall.
+
 .EXAMPLE
     .\Start-Local.ps1
-    # Full rebuild and start of all services.
+    # Full rebuild and start of all services (H2 in-memory DB).
 
 .EXAMPLE
     .\Start-Local.ps1 -SkipBuild
@@ -29,13 +39,22 @@
 .EXAMPLE
     .\Start-Local.ps1 -BackendOnly
     # Rebuild and start only the backend.
+
+.EXAMPLE
+    .\Start-Local.ps1 -UseAzureSql
+    # Start all services with backend connected to Azure SQL.
+
+.EXAMPLE
+    .\Start-Local.ps1 -UseAzureSql -BackendOnly -SkipBuild
+    # Quick restart of backend against Azure SQL (no rebuild).
 #>
 
 [CmdletBinding()]
 param(
     [switch]$SkipBuild,
     [switch]$BackendOnly,
-    [switch]$FrontendOnly
+    [switch]$FrontendOnly,
+    [switch]$UseAzureSql
 )
 
 Set-StrictMode -Version Latest
@@ -51,6 +70,16 @@ $BackendPort = 8080
 $FrontendPort = 3000
 $HealthCheckUrl = "http://localhost:$BackendPort/api/programs"
 $HealthCheckTimeout = 60  # seconds
+
+# --- Determine Spring Profile ---
+if ($UseAzureSql) {
+    $SpringProfile = 'azuresql'
+    $DbLabel = 'Azure SQL (ActiveDirectoryDefault)'
+}
+else {
+    $SpringProfile = 'local'
+    $DbLabel = 'H2 In-Memory'
+}
 
 # --- Helper Functions ---
 
@@ -118,8 +147,29 @@ Write-Host @"
   Backend:  http://localhost:$BackendPort
   Frontend: http://localhost:$FrontendPort
   API Proxy: /api -> http://localhost:$BackendPort
+  Database: $DbLabel
+  Profile:  $SpringProfile
 
 "@ -ForegroundColor White
+
+# Azure CLI check when using Azure SQL
+if ($UseAzureSql -and -not $FrontendOnly) {
+    Write-Step 'Verifying Azure CLI Login'
+    try {
+        $account = az account show --query '{name:name, user:user.name}' -o json 2>&1 | ConvertFrom-Json
+        Write-Host "  Logged in as: $($account.user)" -ForegroundColor Green
+        Write-Host "  Subscription: $($account.name)" -ForegroundColor Green
+    }
+    catch {
+        Write-Host "  ERROR: Not logged in to Azure CLI." -ForegroundColor Red
+        Write-Host "  Run 'az login' first, then retry." -ForegroundColor Red
+        exit 1
+    }
+
+    Write-Host "`n  Ensure your client IP is allowed in the Azure SQL firewall." -ForegroundColor Yellow
+    Write-Host "  If connection fails, add your IP via Azure Portal or:" -ForegroundColor Yellow
+    Write-Host "  az sql server firewall-rule create -g <rg> -s sql-ops-demo-dev-123 -n MyIP --start-ip-address <IP> --end-ip-address <IP>" -ForegroundColor Gray
+}
 
 # 1. Stop existing processes
 Write-Step 'Stopping existing processes'
@@ -216,14 +266,38 @@ if (-not $BackendOnly) {
 if (-not $FrontendOnly) {
     Write-Step 'Starting Backend'
     Write-Host "  JAR: $JarPath" -ForegroundColor Gray
-    Write-Host "  Profile: local" -ForegroundColor Gray
+    Write-Host "  Profile: $SpringProfile" -ForegroundColor Gray
+    Write-Host "  Database: $DbLabel" -ForegroundColor Gray
     Write-Host "  URL: http://localhost:$BackendPort" -ForegroundColor Gray
 
+    # When using Azure SQL with ActiveDirectoryDefault, clear any AZURE_CLIENT_*
+    # env vars so DefaultAzureCredential skips EnvironmentCredential and falls
+    # through to AzureCliCredential (the current logged-in user).
+    $savedAzureEnv = $null
+    if ($UseAzureSql) {
+        $savedAzureEnv = @{
+            AZURE_CLIENT_ID     = $env:AZURE_CLIENT_ID
+            AZURE_CLIENT_SECRET = $env:AZURE_CLIENT_SECRET
+            AZURE_TENANT_ID     = $env:AZURE_TENANT_ID
+        }
+        $env:AZURE_CLIENT_ID     = $null
+        $env:AZURE_CLIENT_SECRET = $null
+        $env:AZURE_TENANT_ID     = $null
+        Write-Host "  Cleared AZURE_CLIENT_* env vars (using AzureCliCredential)" -ForegroundColor Yellow
+    }
+
     $backendProcess = Start-Process -FilePath 'java' `
-        -ArgumentList "-jar `"$JarPath`" --spring.profiles.active=local" `
+        -ArgumentList "-jar `"$JarPath`" --spring.profiles.active=$SpringProfile" `
         -WorkingDirectory $BackendDir `
         -PassThru `
         -WindowStyle Normal
+
+    # Restore env vars so the current shell is unaffected
+    if ($savedAzureEnv) {
+        $env:AZURE_CLIENT_ID     = $savedAzureEnv.AZURE_CLIENT_ID
+        $env:AZURE_CLIENT_SECRET = $savedAzureEnv.AZURE_CLIENT_SECRET
+        $env:AZURE_TENANT_ID     = $savedAzureEnv.AZURE_TENANT_ID
+    }
 
     Write-Host "  Backend started (PID: $($backendProcess.Id))" -ForegroundColor Green
 
