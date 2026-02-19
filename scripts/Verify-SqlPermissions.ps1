@@ -207,20 +207,58 @@ try {
     exit 1
 }
 
-# List group members for reference
-$members = az ad group member list --group $SqlAdminGroupId --only-show-errors 2>&1 | ConvertFrom-Json
+# List group members for reference (use Graph API to include service principals)
+$membersRaw = az rest --method GET `
+    --url "https://graph.microsoft.com/v1.0/groups/$SqlAdminGroupId/members?`$select=id,displayName" `
+    --only-show-errors 2>&1
+$membersStr = ($membersRaw | Out-String).Trim()
+if ($membersStr -match 'ERROR') {
+    # Fallback to az ad group member list (may miss SPs)
+    $members = az ad group member list --group $SqlAdminGroupId --only-show-errors 2>&1 | ConvertFrom-Json
+} else {
+    $members = ($membersStr | ConvertFrom-Json).value
+}
+
+# Also fetch service principal members via OData type cast (the /members endpoint
+# may not return SPs depending on caller permissions)
+$spMembersRaw = az rest --method GET `
+    --url "https://graph.microsoft.com/v1.0/groups/$SqlAdminGroupId/members/microsoft.graph.servicePrincipal?`$select=id,displayName,appId,servicePrincipalType" `
+    --only-show-errors 2>&1
+$spMembersStr = ($spMembersRaw | Out-String).Trim()
+$spGroupMembers = @()
+if ($spMembersStr -notmatch 'ERROR') {
+    $spMembersParsed = ($spMembersStr | ConvertFrom-Json).value
+    if ($spMembersParsed) {
+        $spGroupMembers = @($spMembersParsed)
+        # Merge SP members into the main members list (avoid duplicates)
+        $existingIds = @($members | ForEach-Object { $_.id })
+        foreach ($sp in $spGroupMembers) {
+            if ($existingIds -notcontains $sp.id) {
+                $members += $sp
+            }
+        }
+    }
+}
+
 Write-Info "Group members ($($members.Count)):"
 foreach ($m in $members) {
-    $mType = if ($m.'@odata.type' -match 'servicePrincipal') { 'SP' }
-             elseif ($m.'@odata.type' -match 'user') { 'User' }
-             elseif ($m.'@odata.type' -match 'group') { 'Group' }
-             else { $m.'@odata.type' }
+    $hasSPType = ($m.PSObject.Properties.Name -contains 'servicePrincipalType')
+    $hasODataType = ($m.PSObject.Properties.Name -contains '@odata.type')
+    $odataType = if ($hasODataType) { $m.'@odata.type' } else { '' }
+    $mType = if ($odataType -match 'servicePrincipal' -or ($hasSPType -and $m.servicePrincipalType)) { 'SP' }
+             elseif ($odataType -match 'user') { 'User' }
+             elseif ($odataType -match 'group') { 'Group' }
+             elseif ($hasSPType) { 'SP' }
+             else { 'Unknown' }
     Write-Info "  - [$mType] $($m.displayName) ($($m.id))"
 }
 
 # ── 3. Service Principal Group Membership ────────────────────────────────────
 
 Write-Section '3. Service Principal Group Membership'
+
+$spObjectId = $null
+$spDisplayName = ''
 
 if ($ServicePrincipalAppId) {
     # Resolve the SP's object ID from its app (client) ID
