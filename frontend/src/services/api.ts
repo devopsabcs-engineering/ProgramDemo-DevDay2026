@@ -1,8 +1,19 @@
 import axios from 'axios';
 import type { ProgramRequest, ProgramResponse, ReviewRequest } from '../types';
 
+/**
+ * Base URL for the backend API.
+ *
+ * In local development, Vite proxies '/api' to the backend.
+ * In production, VITE_API_URL is set to the full backend URL
+ * (e.g. https://app-ops-demo-api-dev-123.azurewebsites.net/api).
+ */
+const API_BASE_URL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api';
+
 const apiClient = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },

@@ -93,6 +93,8 @@ jobs:
         run: npm ci
 
       - name: Build
+        env:
+          VITE_API_URL: https://app-${{ env.PREFIX }}-api-${{ inputs.environment }}-${{ inputs.instanceNumber }}.azurewebsites.net
         run: npm run build
 
       - name: Upload frontend artifact

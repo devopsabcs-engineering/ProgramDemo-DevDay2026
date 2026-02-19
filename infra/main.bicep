@@ -69,6 +69,10 @@ module backendApp './modules/web-app.bicep' = {
         name: 'WEBSITES_PORT'
         value: '8080'
       }
+      {
+        name: 'APP_CORS_ALLOWED_ORIGIN'
+        value: 'https://app-${config.prefix}-web-${config.environment}-${config.instanceNumber}.azurewebsites.net'
+      }
     ]
   }
 }
