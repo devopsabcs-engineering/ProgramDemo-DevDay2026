@@ -11,13 +11,13 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  *
  * <p>Restricts cross-origin requests to the frontend origin only.
  * The allowed origin is configurable via the {@code app.cors.allowed-origin}
- * property, defaulting to {@code http://localhost:5173} for local development.</p>
+ * property, defaulting to {@code http://localhost:3000} for local development.</p>
  */
 @Configuration
 public class CorsConfig {
 
     /** The allowed frontend origin for CORS requests. */
-    @Value("${app.cors.allowed-origin:http://localhost:5173}")
+    @Value("${app.cors.allowed-origin:http://localhost:3000}")
     private String allowedOrigin;
 
     /**

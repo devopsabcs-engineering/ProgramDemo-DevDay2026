@@ -99,7 +99,8 @@ export function SubmitProgram() {
     try {
       const response = await createProgram(formData);
       navigate('/confirmation', { state: { program: response } });
-    } catch {
+    } catch (err) {
+      console.error('Program submission failed:', err);
       setServerError(t('error.generic'));
     } finally {
       setSubmitting(false);
