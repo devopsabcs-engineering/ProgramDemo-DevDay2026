@@ -451,6 +451,64 @@ if ($isGroupRoleAssignable) {
         Write-Info 'Alternative: Recreate the admin group with isAssignableToRole=true to assign at group level.'
         Write-Info '  az ad group create --display-name "azureSqlDBAdmins" --mail-nickname "azureSqlDBAdmins" --is-assignable-to-role true'
     }
+
+    # Also check Directory Readers for service principals that may not be group members
+    # but still need the role (e.g., the backend managed identity used in CREATE USER)
+    Write-Info ''
+    Write-Info 'Checking Directory Readers for service principals related to this deployment...'
+
+    # Build a list of SPs to check: GH Actions SP + backend MI (if known)
+    $spPrincipals = @()
+
+    if ($spObjectId) {
+        $spPrincipals += @{ Name = "GH Actions SP ($spDisplayName)"; Id = $spObjectId }
+    }
+
+    # Resolve backend managed identity SP object ID
+    try {
+        $backendMiObjects = az ad sp list --filter "displayName eq '$backendAppName'" --only-show-errors 2>&1 | ConvertFrom-Json
+        if ($backendMiObjects -and $backendMiObjects.Count -gt 0) {
+            $backendMiObjectId = $backendMiObjects[0].id
+            $spPrincipals += @{ Name = "Backend MI ($backendAppName)"; Id = $backendMiObjectId }
+        }
+    } catch { }
+
+    # Deduplicate against already-checked group members
+    $checkedIds = @($members | ForEach-Object { $_.id })
+
+    foreach ($sp in $spPrincipals) {
+        if ($checkedIds -contains $sp.Id) {
+            Write-Info "  $($sp.Name) already checked as group member — skipping."
+            continue
+        }
+        $hasRole = Test-DirectoryReadersRole -PrincipalId $sp.Id
+
+        if ($hasRole -eq $true) {
+            Write-Check "  Directory Readers: $($sp.Name)" $true
+            Add-CheckResult $true
+        } elseif ($hasRole -eq $false) {
+            Write-Check "  Directory Readers: $($sp.Name)" $false 'Missing'
+            $allMembersOk = $false
+            if ($FixIssues) {
+                Write-Action "Assigning Directory Readers to $($sp.Name) ($($sp.Id))..."
+                $err = Grant-DirectoryReadersRole -PrincipalId $sp.Id
+                if (-not $err) {
+                    Write-Check "  Directory Readers: $($sp.Name)" $true '(fixed)'
+                    Add-CheckResult $false $true
+                } else {
+                    Write-Check "  Directory Readers assignment: $($sp.Name)" $false $err
+                    Add-CheckResult $false
+                }
+            } else {
+                Write-Info "  Run with -FixIssues to assign automatically."
+                Add-CheckResult $false
+            }
+        } else {
+            Write-Check "  Directory Readers: $($sp.Name)" $false 'Graph API error'
+            Add-CheckResult $false
+            $allMembersOk = $false
+        }
+    }
 }
 
 # ── 5. Backend Managed Identity ──────────────────────────────────────────────
