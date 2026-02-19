@@ -30,6 +30,9 @@ param dockerRegistryUsername string = ''
 @secure()
 param dockerRegistryPassword string = ''
 
+@description('Custom startup command for the web app (e.g., pm2 serve command). Leave empty to use the container ENTRYPOINT or platform default.')
+param startupCommand string = ''
+
 /* ─── Variables ─── */
 
 // Merge Docker registry settings into app settings when using a container image
@@ -68,6 +71,7 @@ resource webApp 'Microsoft.Web/sites@2024-04-01' = {
     httpsOnly: true
     siteConfig: {
       linuxFxVersion: linuxFxVersion
+      appCommandLine: startupCommand
       alwaysOn: true
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'

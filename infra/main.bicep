@@ -83,6 +83,7 @@ module frontendApp './modules/web-app.bicep' = {
     appSuffix: 'web'
     appServicePlanId: appServicePlan.outputs.id
     linuxFxVersion: 'NODE|20-lts'
+    startupCommand: 'pm2 serve /home/site/wwwroot --no-daemon --spa'
     appSettings: [
       {
         name: 'WEBSITE_NODE_DEFAULT_VERSION'

@@ -164,6 +164,10 @@ Set up `.vscode/mcp.json` at the start of the project so VS Code and Copilot can
 
 Without MCP configured early, developers lose the ability to pull user stories and manage test plans through Copilot — forcing manual context-switching to the Azure DevOps web portal.
 
+### Containerize the Backend API for Deployment
+
+Deploy the Java API as a Docker container rather than relying on the platform's built-in runtime. During dry runs, deploying the Spring Boot JAR directly to Azure App Service exposed TLS/SSL handshake failures between the App Service Java 21 stack and Azure SQL. Packaging the API in a container (using `eclipse-temurin:21-jre-jammy`) with a known JRE and trusted certificate store eliminated these errors entirely. Containers also provide a consistent runtime across local development, CI, and production, removing an entire class of "works locally but fails in Azure" surprises. Build images with Azure Container Registry Tasks (`az acr build`) so no local Docker daemon is required during CI/CD.
+
 ### Embrace Azure DevOps and GitHub Better Together
 
 This project follows a **better together** model where Azure DevOps and GitHub each handle what they do best:
