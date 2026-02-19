@@ -51,72 +51,72 @@ Replace the foundation-only ODS CSS package with the complete-styles package, fi
 
 ## Implementation Checklist
 
-### [ ] Implementation Phase 1: CSS Package Swap and Favicons
+### [x] Implementation Phase 1: CSS Package Swap and Favicons
 
 <!-- parallelizable: false -->
 
-* [ ] Step 1.1: Swap ODS npm package from global-styles to complete-styles
+* [x] Step 1.1: Swap ODS npm package from global-styles to complete-styles
   * Details: .copilot-tracking/details/2026-02-19-ods-ui-compliance-details.md (Lines 12-35)
-* [ ] Step 1.2: Update CSS import path in main.tsx
+* [x] Step 1.2: Update CSS import path in main.tsx
   * Details: .copilot-tracking/details/2026-02-19-ods-ui-compliance-details.md (Lines 37-64)
-* [ ] Step 1.3: Replace Vite favicon with Ontario favicons and add meta description
+* [x] Step 1.3: Replace Vite favicon with Ontario favicons and add meta description
   * Details: .copilot-tracking/details/2026-02-19-ods-ui-compliance-details.md (Lines 66-111)
-* [ ] Step 1.4: Validate phase changes
+* [x] Step 1.4: Validate phase changes
   * Run `npm install` to verify dependency resolution
   * Run `npm run build` to verify CSS import resolves
   * Visually confirm components render with ODS styles
 
-### [ ] Implementation Phase 2: Header and Footer ODS Alignment
+### [x] Implementation Phase 2: Header and Footer ODS Alignment
 
 <!-- parallelizable: true -->
 
-* [ ] Step 2.1: Rewrite Header with trillium logo, active nav state, mobile toggle, and remove dead /review link
+* [x] Step 2.1: Rewrite Header with trillium logo, active nav state, mobile toggle, and remove dead /review link
   * Details: .copilot-tracking/details/2026-02-19-ods-ui-compliance-details.md (Lines 115-170)
-* [ ] Step 2.2: Add Ontario logo to Footer
+* [x] Step 2.2: Add Ontario logo to Footer
   * Details: .copilot-tracking/details/2026-02-19-ods-ui-compliance-details.md (Lines 172-200)
-* [ ] Step 2.3: Validate phase changes
+* [x] Step 2.3: Validate phase changes
   * Run `npx tsc --noEmit` to verify TypeScript compilation
   * Run `npm run lint` to verify ESLint compliance
 
-### [ ] Implementation Phase 3: Alert and Card Structure Fixes
+### [x] Implementation Phase 3: Alert and Card Structure Fixes
 
 <!-- parallelizable: true -->
 
-* [ ] Step 3.1: Fix alert structure in SubmitProgram.tsx (L117–L120)
+* [x] Step 3.1: Fix alert structure in SubmitProgram.tsx (L117–L120)
   * Details: .copilot-tracking/details/2026-02-19-ods-ui-compliance-details.md (Lines 204-247)
-* [ ] Step 3.2: Fix alert and card structure in SubmitConfirmation.tsx (L39–L43, L46–L60)
+* [x] Step 3.2: Fix alert and card structure in SubmitConfirmation.tsx (L39–L43, L46–L60)
   * Details: .copilot-tracking/details/2026-02-19-ods-ui-compliance-details.md (Lines 249-314)
-* [ ] Step 3.3: Fix alert structure and replace inline styles in SearchPrograms.tsx (L82, L109–L121, L129)
+* [x] Step 3.3: Fix alert structure and replace inline styles in SearchPrograms.tsx (L82, L109–L121, L129)
   * Details: .copilot-tracking/details/2026-02-19-ods-ui-compliance-details.md (Lines 316-400)
 
-### [ ] Implementation Phase 4: Accessibility and i18n Remediation
+### [x] Implementation Phase 4: Accessibility and i18n Remediation
 
 <!-- parallelizable: true -->
 
-* [ ] Step 4.1: Add `aria-required="true"` to required form inputs in SubmitProgram.tsx
+* [x] Step 4.1: Add `aria-required="true"` to required form inputs in SubmitProgram.tsx
   * Details: .copilot-tracking/details/2026-02-19-ods-ui-compliance-details.md (Lines 404-446)
-* [ ] Step 4.2: Add `lang` attribute to LanguageToggle button
+* [x] Step 4.2: Add `lang` attribute to LanguageToggle button
   * Details: .copilot-tracking/details/2026-02-19-ods-ui-compliance-details.md (Lines 448-495)
-* [ ] Step 4.3: Add `ontario-columns` wrapper to Layout.tsx (L23–L25)
+* [x] Step 4.3: Add `ontario-columns` wrapper to Layout.tsx (L23–L25)
   * Details: .copilot-tracking/details/2026-02-19-ods-ui-compliance-details.md (Lines 497-535)
-* [ ] Step 4.4: Add language sync on init and languageChanged event in i18n.ts
+* [x] Step 4.4: Add language sync on init and languageChanged event in i18n.ts
   * Details: .copilot-tracking/details/2026-02-19-ods-ui-compliance-details.md (Lines 537-588)
-* [ ] Step 4.5: Add missing translation keys for alert headers in EN and FR locale files
+* [x] Step 4.5: Add missing translation keys for alert headers in EN and FR locale files
   * Details: .copilot-tracking/details/2026-02-19-ods-ui-compliance-details.md (Lines 590-641)
 
-### [ ] Implementation Phase 5: Validation
+### [x] Implementation Phase 5: Validation
 
 <!-- parallelizable: false -->
 
-* [ ] Step 5.1: Run full project validation
+* [x] Step 5.1: Run full project validation
   * Execute `npm run lint` for ESLint compliance
   * Execute `npx tsc --noEmit` for TypeScript type checking
   * Execute `npm run build` to verify production build succeeds
   * Run `npm test` for any existing test suites
-* [ ] Step 5.2: Fix minor validation issues
+* [x] Step 5.2: Fix minor validation issues
   * Iterate on lint errors, TypeScript errors, and build warnings
   * Apply fixes directly when corrections are straightforward
-* [ ] Step 5.3: Report blocking issues
+* [x] Step 5.3: Report blocking issues
   * Document issues requiring additional research
   * Provide user with next steps and recommended planning
   * Avoid large-scale fixes within this phase

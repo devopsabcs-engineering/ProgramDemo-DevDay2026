@@ -5,10 +5,10 @@
   },
   "header": {
     "title": "Services de programmes de l'Ontario",
+    "menuToggle": "Menu",
     "nav": {
       "submit": "Soumettre un programme",
-      "search": "Rechercher des programmes",
-      "review": "Examen ministériel"
+      "search": "Rechercher des programmes"
     }
   },
   "footer": {
@@ -92,8 +92,12 @@
     "emailInvalid": "Veuillez entrer une adresse courriel valide."
   },
   "error": {
+    "title": "Erreur",
     "generic": "Une erreur s'est produite. Veuillez réessayer.",
     "notFound": "La ressource demandée est introuvable.",
     "network": "Impossible de se connecter au serveur. Veuillez vérifier votre connexion."
+  },
+  "success": {
+    "title": "Succès"
   }
 }

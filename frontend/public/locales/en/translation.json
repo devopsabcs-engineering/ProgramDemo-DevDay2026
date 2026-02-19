@@ -5,10 +5,10 @@
   },
   "header": {
     "title": "Ontario Program Services",
+    "menuToggle": "Menu",
     "nav": {
       "submit": "Submit Program",
-      "search": "Search Programs",
-      "review": "Ministry Review"
+      "search": "Search Programs"
     }
   },
   "footer": {
@@ -92,8 +92,12 @@
     "emailInvalid": "Please enter a valid email address."
   },
   "error": {
+    "title": "Error",
     "generic": "Something went wrong. Please try again.",
     "notFound": "The requested resource was not found.",
     "network": "Unable to connect to the server. Please check your connection."
+  },
+  "success": {
+    "title": "Success"
   }
 }

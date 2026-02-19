@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next';
 /**
  * Ontario Design System footer with government-required links.
  *
- * Displays copyright, accessibility, privacy, and terms-of-use links
- * following Ontario government branding standards.
+ * Displays the Ontario logo, copyright, accessibility, privacy,
+ * and terms-of-use links following Ontario government branding standards.
  */
 export function Footer() {
   const { t } = useTranslation();
@@ -12,6 +12,16 @@ export function Footer() {
   return (
     <footer className="ontario-footer" role="contentinfo">
       <div className="ontario-row">
+        <div className="ontario-footer__logo-container">
+          <a href="https://www.ontario.ca" aria-label="Ontario">
+            <img
+              src="/ontario-logo.svg"
+              alt="Ontario"
+              width="120"
+              height="27"
+            />
+          </a>
+        </div>
         <div className="ontario-footer__container">
           <ul className="ontario-footer__list">
             <li className="ontario-footer__list-item">

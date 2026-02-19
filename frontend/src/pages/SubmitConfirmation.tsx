@@ -33,15 +33,24 @@ export function SubmitConfirmation() {
 
   return (
     <section aria-labelledby="confirmation-heading">
+      <h2 id="confirmation-heading" className="ontario-h2">
+        {t('confirmation.title')}
+      </h2>
+
       <div className="ontario-alert ontario-alert--success" role="status">
-        <h2 id="confirmation-heading" className="ontario-h2">
-          {t('confirmation.title')}
-        </h2>
-        <p>{t('confirmation.message')}</p>
+        <div className="ontario-alert__header">
+          <h3 className="ontario-alert__header-title">
+            {t('success.title')}
+          </h3>
+        </div>
+        <div className="ontario-alert__body">
+          <p>{t('confirmation.message')}</p>
+        </div>
       </div>
 
       <div className="ontario-card">
-        <dl className="ontario-description-list">
+        <div className="ontario-card__content">
+          <dl className="ontario-description-list">
           <dt>{t('confirmation.referenceNumber')}</dt>
           <dd>{program.id}</dd>
 
@@ -53,7 +62,8 @@ export function SubmitConfirmation() {
 
           <dt>{t('confirmation.submittedDate')}</dt>
           <dd>{formattedDate}</dd>
-        </dl>
+          </dl>
+        </div>
       </div>
 
       <h3 className="ontario-h4">{t('confirmation.nextSteps')}</h3>

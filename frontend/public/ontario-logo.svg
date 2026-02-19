@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 40" role="img" aria-label="Ontario">
+  <title>Ontario</title>
+  <!-- Ontario trillium symbol -->
+  <g transform="translate(4, 2) scale(0.45)">
+    <path d="M40 0 C40 0 48 20 40 40 C32 20 40 0 40 0Z" fill="#00703C"/>
+    <path d="M40 40 C40 40 20 32 0 40 C20 48 40 40 40 40Z" fill="#00703C"/>
+    <path d="M40 40 C40 40 60 32 80 40 C60 48 40 40 40 40Z" fill="#00703C"/>
+    <circle cx="40" cy="36" r="4" fill="#fff"/>
+  </g>
+  <!-- Ontario wordmark -->
+  <text x="46" y="28" font-family="'Open Sans', Arial, Helvetica, sans-serif" font-size="22" font-weight="700" fill="#1a1a1a" letter-spacing="0.5">Ontario</text>
+</svg>

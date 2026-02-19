@@ -1,6 +1,6 @@
 import { StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
-import '@ongov/ontario-design-system-global-styles/styles/css/compiled/ontario-theme.min.css';
+import '@ongov/ontario-design-system-complete-styles/styles/css/compiled/ontario-theme.min.css';
 import './i18n';
 import App from './App';
 

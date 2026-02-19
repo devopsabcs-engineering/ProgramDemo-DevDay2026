@@ -116,7 +116,12 @@ export function SubmitProgram() {
 
       {serverError && (
         <div className="ontario-alert ontario-alert--error" role="alert">
-          <p>{serverError}</p>
+          <div className="ontario-alert__header">
+            <h2 className="ontario-alert__header-title">{t('error.title')}</h2>
+          </div>
+          <div className="ontario-alert__body">
+            <p>{serverError}</p>
+          </div>
         </div>
       )}
 
@@ -152,6 +157,7 @@ export function SubmitProgram() {
               errors.programName ? 'programName-error' : undefined
             }
             aria-invalid={!!errors.programName}
+            aria-required="true"
             autoComplete="off"
             maxLength={200}
           />
@@ -190,6 +196,7 @@ export function SubmitProgram() {
                 : undefined
             }
             aria-invalid={!!errors.programDescription}
+            aria-required="true"
           />
         </div>
 
@@ -222,6 +229,7 @@ export function SubmitProgram() {
               errors.programTypeId ? 'programTypeId-error' : undefined
             }
             aria-invalid={!!errors.programTypeId}
+            aria-required="true"
           >
             <option value={0} disabled>
               {t('submit.programTypeSelect')}

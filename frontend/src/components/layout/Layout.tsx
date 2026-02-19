@@ -21,7 +21,9 @@ export function Layout() {
       <Header />
       <main id="main-content" className="ontario-main" tabIndex={-1}>
         <div className="ontario-row">
-          <Outlet />
+          <div className="ontario-columns ontario-small-12">
+            <Outlet />
+          </div>
         </div>
       </main>
       <Footer />

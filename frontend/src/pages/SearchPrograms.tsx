@@ -76,31 +76,35 @@ export function SearchPrograms() {
         <label htmlFor="search-input" className="ontario-label ontario-label--visually-hidden">
           {t('search.title')}
         </label>
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-end' }}>
-          <input
-            type="text"
-            id="search-input"
-            className="ontario-input"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t('search.searchPlaceholder')}
-            autoComplete="off"
-          />
-          <button
-            type="submit"
-            className="ontario-button ontario-button--primary"
-          >
-            {t('search.searchButton')}
-          </button>
-          {search && (
+        <div className="ontario-row">
+          <div className="ontario-columns ontario-small-12 ontario-medium-6">
+            <input
+              type="text"
+              id="search-input"
+              className="ontario-input"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('search.searchPlaceholder')}
+              autoComplete="off"
+            />
+          </div>
+          <div className="ontario-columns ontario-small-12 ontario-medium-6">
             <button
-              type="button"
-              className="ontario-button ontario-button--tertiary"
-              onClick={handleClear}
+              type="submit"
+              className="ontario-button ontario-button--primary"
             >
-              {t('search.clearButton')}
+              {t('search.searchButton')}
             </button>
-          )}
+            {search && (
+              <button
+                type="button"
+                className="ontario-button ontario-button--tertiary"
+                onClick={handleClear}
+              >
+                {t('search.clearButton')}
+              </button>
+            )}
+          </div>
         </div>
       </form>
 
@@ -113,14 +117,19 @@ export function SearchPrograms() {
 
       {error && (
         <div className="ontario-alert ontario-alert--error" role="alert">
-          <p>{error}</p>
-          <button
-            type="button"
-            className="ontario-button ontario-button--secondary"
-            onClick={() => fetchPrograms(search || undefined)}
-          >
-            {t('search.retry')}
-          </button>
+          <div className="ontario-alert__header">
+            <h2 className="ontario-alert__header-title">{t('error.title')}</h2>
+          </div>
+          <div className="ontario-alert__body">
+            <p>{error}</p>
+            <button
+              type="button"
+              className="ontario-button ontario-button--secondary"
+              onClick={() => fetchPrograms(search || undefined)}
+            >
+              {t('search.retry')}
+            </button>
+          </div>
         </div>
       )}
 
@@ -131,7 +140,8 @@ export function SearchPrograms() {
       )}
 
       {!loading && !error && programs.length > 0 && (
-        <table className="ontario-table" aria-label={t('search.title')}>
+        <div className="ontario-table-container">
+          <table className="ontario-table" aria-label={t('search.title')}>
           <thead>
             <tr>
               <th scope="col">{t('search.table.id')}</th>
@@ -162,8 +172,9 @@ export function SearchPrograms() {
                 </td>
               </tr>
             ))}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   );
