@@ -274,58 +274,183 @@ if ($ServicePrincipalAppId) {
 
 # ── 4. Directory Readers Role ────────────────────────────────────────────────
 
-Write-Section '4. Directory Readers Role for Admin Group'
+Write-Section '4. Directory Readers Role'
 
-Write-Info 'Checking if admin group has Directory Readers role...'
-Write-Info '(Required to resolve managed identity names during CREATE USER FROM EXTERNAL PROVIDER)'
+Write-Info 'Required to resolve managed identity names during CREATE USER FROM EXTERNAL PROVIDER.'
 
+$directoryReadersRoleId = '88d8e3e3-8f55-4a1e-953a-9b9898b8876b'
+
+# Helper: check if a principal has Directory Readers
+function Test-DirectoryReadersRole {
+    param([string]$PrincipalId)
+    try {
+        $filterParam = "roleDefinitionId eq '$directoryReadersRoleId' and principalId eq '$PrincipalId'"
+        $graphUrl = "https://graph.microsoft.com/v1.0/roleManagement/directory/roleAssignments?`$filter=$filterParam"
+        $raw = az rest --method GET --url $graphUrl --only-show-errors 2>&1
+        $rawStr = ($raw | Out-String).Trim()
+        if ($rawStr -match 'ERROR') { return $null }
+        $parsed = $rawStr | ConvertFrom-Json
+        return ($parsed.value -and $parsed.value.Count -gt 0)
+    } catch {
+        return $null
+    }
+}
+
+# Helper: assign Directory Readers to a principal via temp file (avoids JSON escaping issues)
+function Grant-DirectoryReadersRole {
+    param([string]$PrincipalId)
+    $body = @{
+        '@odata.type'    = '#microsoft.graph.unifiedRoleAssignment'
+        roleDefinitionId = $directoryReadersRoleId
+        principalId      = $PrincipalId
+        directoryScopeId = '/'
+    } | ConvertTo-Json -Compress
+
+    $tempFile = [System.IO.Path]::GetTempFileName()
+    try {
+        Set-Content -Path $tempFile -Value $body -Encoding UTF8 -NoNewline
+        $result = az rest --method POST `
+            --url 'https://graph.microsoft.com/v1.0/roleManagement/directory/roleAssignments' `
+            --headers 'Content-Type=application/json' `
+            --body "@$tempFile" `
+            --only-show-errors 2>&1
+        $resultStr = ($result | Out-String).Trim()
+        if ($resultStr -match 'ERROR') {
+            return $resultStr
+        }
+        return $null  # success
+    } finally {
+        Remove-Item $tempFile -ErrorAction SilentlyContinue
+    }
+}
+
+# Check if the admin group itself is role-assignable
+$isGroupRoleAssignable = $false
 try {
-    # Get the Directory Readers role definition
-    $directoryReadersRoleId = '88d8e3e3-8f55-4a1e-953a-9b9898b8876b'
+    $groupDetail = az rest --method GET `
+        --url "https://graph.microsoft.com/v1.0/groups/$SqlAdminGroupId?`$select=displayName,isAssignableToRole" `
+        --only-show-errors 2>&1
+    $groupDetailStr = ($groupDetail | Out-String).Trim()
+    if ($groupDetailStr -notmatch 'ERROR') {
+        $groupProps = $groupDetailStr | ConvertFrom-Json
+        $isGroupRoleAssignable = [bool]$groupProps.isAssignableToRole
+    }
+} catch { }
 
-    $filterParam = "roleDefinitionId eq '$directoryReadersRoleId' and principalId eq '$SqlAdminGroupId'"
-    $graphUrl = "https://graph.microsoft.com/v1.0/roleManagement/directory/roleAssignments?`$filter=$filterParam"
+Write-Info "Admin group isAssignableToRole: $isGroupRoleAssignable"
 
-    $rawResponse = az rest --method GET --url $graphUrl --only-show-errors 2>&1
-    $roleAssignments = $rawResponse | ConvertFrom-Json
-
-    if ($roleAssignments.value -and $roleAssignments.value.Count -gt 0) {
+if ($isGroupRoleAssignable) {
+    # The group can hold directory roles — check/assign at group level
+    $hasRole = Test-DirectoryReadersRole -PrincipalId $SqlAdminGroupId
+    if ($hasRole -eq $true) {
         Write-Check 'Admin group has Directory Readers role' $true
         Add-CheckResult $true
-    } else {
+    } elseif ($hasRole -eq $false) {
         Write-Check 'Admin group has Directory Readers role' $false
         if ($FixIssues) {
-            Write-Action 'Assigning Directory Readers role to admin group...'
-            $body = @{
-                '@odata.type'    = '#microsoft.graph.unifiedRoleAssignment'
-                roleDefinitionId = $directoryReadersRoleId
-                principalId      = $SqlAdminGroupId
-                directoryScopeId = '/'
-            } | ConvertTo-Json -Compress
-
-            try {
-                az rest --method POST `
-                    --url 'https://graph.microsoft.com/v1.0/roleManagement/directory/roleAssignments' `
-                    --headers 'Content-Type=application/json' `
-                    --body $body `
-                    --only-show-errors 2>&1 | Out-Null
-                Write-Check 'Directory Readers role assigned' $true '(fixed)'
+            Write-Action "Assigning Directory Readers to group $($group.displayName)..."
+            $err = Grant-DirectoryReadersRole -PrincipalId $SqlAdminGroupId
+            if (-not $err) {
+                Write-Check 'Directory Readers role assigned to group' $true '(fixed)'
                 Add-CheckResult $false $true
-            } catch {
-                Write-Check 'Directory Readers role assignment' $false `
-                    'Needs Privileged Role Administrator. Assign manually in Entra ID portal.'
+            } else {
+                Write-Check 'Directory Readers role assignment' $false $err
                 Add-CheckResult $false
             }
         } else {
-            Write-Info 'Run with -FixIssues to assign automatically, or assign manually:'
-            Write-Info '  Entra ID > Roles and administrators > Directory Readers > Add assignment > select admin group'
+            Write-Info 'Run with -FixIssues to assign automatically.'
             Add-CheckResult $false
         }
+    } else {
+        Write-Check 'Directory Readers role check (group)' $false 'Graph API error'
+        Add-CheckResult $false
     }
-} catch {
-    Write-Check 'Directory Readers role check' $false "Graph API error: $($_.Exception.Message)"
-    Write-Info 'You may lack Graph permissions. Check manually in Entra ID portal.'
-    Add-CheckResult $false
+} else {
+    # Group is NOT role-assignable — must assign Directory Readers to each member individually
+    Write-Info "Group is not role-assignable (isAssignableToRole=false). Cannot assign directory roles to the group."
+    Write-Info "Checking Directory Readers on each group member individually..."
+
+    $allMembersOk = $true
+    foreach ($m in $members) {
+        $mName = $m.displayName
+        $mId = $m.id
+        $hasRole = Test-DirectoryReadersRole -PrincipalId $mId
+
+        if ($hasRole -eq $true) {
+            Write-Check "  Directory Readers: $mName" $true
+            Add-CheckResult $true
+        } elseif ($hasRole -eq $false) {
+            Write-Check "  Directory Readers: $mName" $false 'Missing'
+            $allMembersOk = $false
+            if ($FixIssues) {
+                Write-Action "Assigning Directory Readers to $mName ($mId)..."
+                $err = Grant-DirectoryReadersRole -PrincipalId $mId
+                if (-not $err) {
+                    Write-Check "  Directory Readers: $mName" $true '(fixed)'
+                    Add-CheckResult $false $true
+                } else {
+                    Write-Check "  Directory Readers assignment: $mName" $false $err
+                    Add-CheckResult $false
+                }
+            } else {
+                Write-Info "  Run with -FixIssues to assign automatically."
+                Add-CheckResult $false
+            }
+        } else {
+            Write-Check "  Directory Readers: $mName" $false 'Graph API error'
+            Add-CheckResult $false
+            $allMembersOk = $false
+        }
+    }
+
+    # Also check the SQL Server's own identity if it has one
+    Write-Info 'Checking SQL Server system-assigned identity...'
+    try {
+        $sqlIdentity = az sql server show `
+            --name $sqlServerName `
+            --resource-group $resourceGroup `
+            --query 'identity.principalId' -o tsv `
+            --only-show-errors 2>&1
+        $sqlIdentityStr = ($sqlIdentity | Out-String).Trim()
+
+        if ($sqlIdentityStr -and $sqlIdentityStr -ne 'None' -and $sqlIdentityStr -notmatch 'ERROR') {
+            Write-Info "SQL Server identity principal: $sqlIdentityStr"
+            $hasRole = Test-DirectoryReadersRole -PrincipalId $sqlIdentityStr
+            if ($hasRole -eq $true) {
+                Write-Check '  Directory Readers: SQL Server identity' $true
+                Add-CheckResult $true
+            } elseif ($hasRole -eq $false) {
+                Write-Check '  Directory Readers: SQL Server identity' $false 'Missing'
+                if ($FixIssues) {
+                    Write-Action "Assigning Directory Readers to SQL Server identity..."
+                    $err = Grant-DirectoryReadersRole -PrincipalId $sqlIdentityStr
+                    if (-not $err) {
+                        Write-Check '  Directory Readers: SQL Server identity' $true '(fixed)'
+                        Add-CheckResult $false $true
+                    } else {
+                        Write-Check '  Directory Readers assignment: SQL Server' $false $err
+                        Add-CheckResult $false
+                    }
+                } else {
+                    Write-Info '  Run with -FixIssues to assign automatically.'
+                    Add-CheckResult $false
+                }
+            } else {
+                Write-Check '  Directory Readers: SQL Server identity' $false 'Graph API error'
+                Add-CheckResult $false
+            }
+        } else {
+            Write-Info 'SQL Server has no system-assigned identity. Using AAD admin group for identity resolution.'
+        }
+    } catch {
+        Write-Info "Could not check SQL Server identity: $($_.Exception.Message)"
+    }
+
+    if (-not $allMembersOk -and -not $FixIssues) {
+        Write-Info ''
+        Write-Info 'Alternative: Recreate the admin group with isAssignableToRole=true to assign at group level.'
+        Write-Info '  az ad group create --display-name "azureSqlDBAdmins" --mail-nickname "azureSqlDBAdmins" --is-assignable-to-role true'
+    }
 }
 
 # ── 5. Backend Managed Identity ──────────────────────────────────────────────
