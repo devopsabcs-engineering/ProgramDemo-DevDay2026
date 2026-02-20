@@ -79,11 +79,11 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- H2 in-memory database for unit and integration tests -->
+        <!-- H2 in-memory database for local dev and unit/integration tests -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <scope>test</scope>
+            <scope>runtime</scope>
         </dependency>
     </dependencies>
 
