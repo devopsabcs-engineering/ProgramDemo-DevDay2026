@@ -33,6 +33,9 @@ param dockerRegistryPassword string = ''
 @description('Custom startup command for the web app (e.g., pm2 serve command). Leave empty to use the container ENTRYPOINT or platform default.')
 param startupCommand string = ''
 
+@description('Resource ID of the VNet integration subnet. Leave empty to skip VNet integration.')
+param vnetSubnetId string = ''
+
 /* ─── Variables ─── */
 
 // Merge Docker registry settings into app settings when using a container image
@@ -69,12 +72,16 @@ resource webApp 'Microsoft.Web/sites@2024-04-01' = {
   properties: {
     serverFarmId: appServicePlanId
     httpsOnly: true
+    // Wire VNet integration when a subnet ID is supplied
+    virtualNetworkSubnetId: !empty(vnetSubnetId) ? vnetSubnetId : null
     siteConfig: {
       linuxFxVersion: linuxFxVersion
       appCommandLine: startupCommand
       alwaysOn: true
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
+      // Route all outbound traffic through VNet so private endpoint DNS resolves correctly
+      vnetRouteAllEnabled: !empty(vnetSubnetId)
       appSettings: allAppSettings
     }
   }

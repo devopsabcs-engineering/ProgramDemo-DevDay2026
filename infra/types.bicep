@@ -37,9 +37,6 @@ type SqlConfig = {
 
   @description('SQL Database SKU name.')
   skuName: 'Basic' | 'S0' | 'S1' | 'S2' | 'P1'
-
-  @description('Whether to allow Azure services to access the SQL Server.')
-  isAllowAzureServicesEnabled: bool
 }
 
 /* ─── App Service Configuration ─── */

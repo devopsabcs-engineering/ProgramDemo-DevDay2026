@@ -20,6 +20,12 @@ param sqlConfig SqlConfig
 
 /* ─── Modules: Shared Infrastructure ─── */
 
+module vnet './modules/vnet.bicep' = {
+  params: {
+    config: config
+  }
+}
+
 module storageAccount './modules/storage.bicep' = {
   params: {
     config: config
@@ -52,6 +58,7 @@ module backendApp './modules/web-app.bicep' = {
     dockerRegistryServerUrl: 'https://${containerRegistry.outputs.loginServer}'
     dockerRegistryUsername: containerRegistry.outputs.adminUsername
     dockerRegistryPassword: containerRegistry.outputs.adminPassword
+    vnetSubnetId: vnet.outputs.appSubnetId
     appSettings: [
       {
         name: 'SPRING_DATASOURCE_URL'
@@ -99,6 +106,8 @@ module sqlServer './modules/sql.bicep' = {
   params: {
     config: config
     sqlConfig: sqlConfig
+    privateEndpointSubnetId: vnet.outputs.privateEndpointSubnetId
+    vnetId: vnet.outputs.vnetId
   }
 }
 

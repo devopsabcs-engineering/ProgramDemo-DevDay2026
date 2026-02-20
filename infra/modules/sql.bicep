@@ -1,5 +1,5 @@
 metadata name = 'SQL Server and Database'
-metadata description = 'Deploys an Azure SQL Server and a SQL Database with firewall rules.'
+metadata description = 'Deploys an Azure SQL Server and a SQL Database accessible only via a private endpoint. Public network access is disabled.'
 
 import { DeploymentConfig, SqlConfig } from '../types.bicep'
 
@@ -14,6 +14,12 @@ param sqlConfig SqlConfig
 @description('SQL Database name suffix.')
 param databaseName string = 'programdb'
 
+@description('Resource ID of the private endpoint subnet.')
+param privateEndpointSubnetId string
+
+@description('Resource ID of the VNet for private DNS zone linking.')
+param vnetId string
+
 /* ─── Resources ─── */
 
 resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' = {
@@ -23,7 +29,9 @@ resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' = {
   properties: {
     version: '12.0'
     minimalTlsVersion: '1.2'
-    publicNetworkAccess: 'Enabled'
+    // Public access is disabled; connectivity is via private endpoint only.
+    // Azure Policy enforces this — do not change to Enabled.
+    publicNetworkAccess: 'Disabled'
     administrators: {
       administratorType: 'ActiveDirectory'
       login: sqlConfig.aadAdminLogin
@@ -32,15 +40,6 @@ resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' = {
       azureADOnlyAuthentication: true
       principalType: 'Group'
     }
-  }
-}
-
-resource allowAzureServices 'Microsoft.Sql/servers/firewallRules@2023-08-01-preview' = if (sqlConfig.isAllowAzureServicesEnabled) {
-  parent: sqlServer
-  name: 'AllowAllAzureIps'
-  properties: {
-    startIpAddress: '0.0.0.0'
-    endIpAddress: '0.0.0.0'
   }
 }
 
@@ -55,6 +54,63 @@ resource sqlDatabase 'Microsoft.Sql/servers/databases@2023-08-01-preview' = {
   properties: {
     collation: 'SQL_Latin1_General_CP1_CI_AS'
     maxSizeBytes: 2147483648
+  }
+}
+
+/* ─── Private DNS Zone ─── */
+
+resource privateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: 'privatelink.database.windows.net'
+  location: 'global'
+  tags: config.tags
+}
+
+resource privateDnsZoneVnetLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+  parent: privateDnsZone
+  name: 'link-${config.prefix}-${config.environment}-${config.instanceNumber}'
+  location: 'global'
+  properties: {
+    virtualNetwork: {
+      id: vnetId
+    }
+    registrationEnabled: false
+  }
+}
+
+/* ─── Private Endpoint ─── */
+
+resource privateEndpoint 'Microsoft.Network/privateEndpoints@2024-05-01' = {
+  name: 'pe-sql-${config.prefix}-${config.environment}-${config.instanceNumber}'
+  location: config.location
+  tags: config.tags
+  properties: {
+    subnet: {
+      id: privateEndpointSubnetId
+    }
+    privateLinkServiceConnections: [
+      {
+        name: 'plsc-sql-${config.prefix}-${config.environment}-${config.instanceNumber}'
+        properties: {
+          privateLinkServiceId: sqlServer.id
+          groupIds: ['sqlServer']
+        }
+      }
+    ]
+  }
+}
+
+resource privateEndpointDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-05-01' = {
+  parent: privateEndpoint
+  name: 'dnszonegroup'
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'privatelink-database-windows-net'
+        properties: {
+          privateDnsZoneId: privateDnsZone.id
+        }
+      }
+    ]
   }
 }
 
