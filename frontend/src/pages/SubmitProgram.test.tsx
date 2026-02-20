@@ -179,7 +179,8 @@ describe('SubmitProgram', () => {
           programDescription: 'A description',
           programTypeId: 1,
           submittedBy: 'test@example.com',
-        })
+        }),
+        undefined
       );
       expect(mockNavigate).toHaveBeenCalledWith(
         '/confirmation',

@@ -5,6 +5,7 @@ import com.ontario.demo.programdemo.dto.ProgramRequest;
 import com.ontario.demo.programdemo.dto.ProgramResponse;
 import com.ontario.demo.programdemo.dto.ReviewRequest;
 import com.ontario.demo.programdemo.model.ProgramStatus;
+import com.ontario.demo.programdemo.service.BlobStorageService;
 import com.ontario.demo.programdemo.service.ProgramService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -21,7 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -45,6 +47,9 @@ class ProgramControllerTest {
 
     @MockBean
     private ProgramService programService;
+
+    @MockBean
+    private BlobStorageService blobStorageService;
 
     // -------------------------------------------------------------------------
     // Test data helpers
@@ -79,15 +84,20 @@ class ProgramControllerTest {
     // POST /api/programs
     // -------------------------------------------------------------------------
 
+    /** Creates a {@link MockMultipartFile} wrapping a JSON-serialised program request. */
+    private MockMultipartFile programPart(ProgramRequest request) throws Exception {
+        return new MockMultipartFile(
+                "program", "", MediaType.APPLICATION_JSON_VALUE,
+                objectMapper.writeValueAsBytes(request));
+    }
+
     @Test
     @DisplayName("POST /api/programs — valid request returns 201 Created")
     void createProgram_validRequest_returns201() throws Exception {
         ProgramResponse response = sampleResponse(1L, ProgramStatus.SUBMITTED);
         when(programService.createProgram(any(ProgramRequest.class))).thenReturn(response);
 
-        mockMvc.perform(post("/api/programs")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest())))
+        mockMvc.perform(multipart("/api/programs").file(programPart(validRequest())))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.programName").value("Test Program"))
@@ -102,9 +112,7 @@ class ProgramControllerTest {
                 .programTypeId(1)
                 .build();
 
-        mockMvc.perform(post("/api/programs")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(multipart("/api/programs").file(programPart(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.programName").exists());
     }
@@ -117,9 +125,7 @@ class ProgramControllerTest {
                 .programTypeId(1)
                 .build();
 
-        mockMvc.perform(post("/api/programs")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(multipart("/api/programs").file(programPart(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.programDescription").exists());
     }
@@ -132,9 +138,7 @@ class ProgramControllerTest {
                 .programDescription("A description")
                 .build();
 
-        mockMvc.perform(post("/api/programs")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(multipart("/api/programs").file(programPart(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.programTypeId").exists());
     }
@@ -250,9 +254,7 @@ class ProgramControllerTest {
                 .budget(new java.math.BigDecimal("-100.00"))
                 .build();
 
-        mockMvc.perform(post("/api/programs")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(multipart("/api/programs").file(programPart(request)))
                 .andExpect(status().isBadRequest());
     }
 
@@ -269,9 +271,7 @@ class ProgramControllerTest {
         ProgramResponse response = sampleResponse(1L, ProgramStatus.SUBMITTED);
         when(programService.createProgram(any(ProgramRequest.class))).thenReturn(response);
 
-        mockMvc.perform(post("/api/programs")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+        mockMvc.perform(multipart("/api/programs").file(programPart(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.budget").value(250000.00));
     }
