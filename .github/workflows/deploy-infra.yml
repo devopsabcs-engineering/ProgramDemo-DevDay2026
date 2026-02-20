@@ -15,7 +15,7 @@ on:
       instanceNumber:
         description: 'Instance number for resource naming'
         required: true
-        default: '123'
+        default: '125'
         type: string
       resourceGroupLocation:
         description: 'Azure region for the resource group'

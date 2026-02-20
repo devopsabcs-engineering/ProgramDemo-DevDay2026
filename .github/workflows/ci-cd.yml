@@ -15,7 +15,7 @@ on:
       instanceNumber:
         description: 'Instance number for resource naming'
         required: true
-        default: '123'
+        default: '125'
         type: string
   push:
     branches:
@@ -33,10 +33,10 @@ concurrency:
 
 env:
   PREFIX: ops-demo
-  INSTANCE_NUMBER: ${{ inputs.instanceNumber || '123' }}
+  INSTANCE_NUMBER: ${{ inputs.instanceNumber || '125' }}
   ENVIRONMENT: ${{ inputs.environment || 'dev' }}
-  ACR_NAME: acropsdemo${{ inputs.environment || 'dev' }}${{ inputs.instanceNumber || '123' }}
-  RESOURCE_GROUP: rg-${{ inputs.environment || 'dev' }}-${{ inputs.instanceNumber || '123' }}
+  ACR_NAME: acropsdemo${{ inputs.environment || 'dev' }}${{ inputs.instanceNumber || '125' }}
+  RESOURCE_GROUP: rg-${{ inputs.environment || 'dev' }}-${{ inputs.instanceNumber || '125' }}
   IMAGE_NAME: program-demo-api
 
 # ─────────────────────────────────────────────

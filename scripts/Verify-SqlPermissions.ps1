@@ -24,7 +24,7 @@
     Target environment (dev, test, prod). Default: dev
 
 .PARAMETER InstanceNumber
-    Instance number for resource naming. Default: 123
+    Instance number for resource naming. Default: 125
 
 .PARAMETER Prefix
     Resource naming prefix. Default: ops-demo
@@ -36,7 +36,7 @@
 .EXAMPLE
     .\Verify-SqlPermissions.ps1
     .\Verify-SqlPermissions.ps1 -FixIssues
-    .\Verify-SqlPermissions.ps1 -Environment dev -InstanceNumber 123 -FixIssues
+    .\Verify-SqlPermissions.ps1 -Environment dev -InstanceNumber 125 -FixIssues
 #>
 
 [CmdletBinding()]
@@ -44,7 +44,7 @@ param(
     [ValidateSet('dev', 'test', 'prod')]
     [string]$Environment = 'dev',
 
-    [string]$InstanceNumber = '123',
+    [string]$InstanceNumber = '125',
 
     [string]$Prefix = 'ops-demo',
 

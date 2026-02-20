@@ -168,7 +168,7 @@ if ($UseAzureSql -and -not $FrontendOnly) {
 
     Write-Host "`n  Ensure your client IP is allowed in the Azure SQL firewall." -ForegroundColor Yellow
     Write-Host "  If connection fails, add your IP via Azure Portal or:" -ForegroundColor Yellow
-    Write-Host "  az sql server firewall-rule create -g <rg> -s sql-ops-demo-dev-123 -n MyIP --start-ip-address <IP> --end-ip-address <IP>" -ForegroundColor Gray
+    Write-Host "  az sql server firewall-rule create -g <rg> -s sql-ops-demo-dev-125 -n MyIP --start-ip-address <IP> --end-ip-address <IP>" -ForegroundColor Gray
 }
 
 # 1. Stop existing processes
