@@ -253,7 +253,7 @@ jobs:
       contents: read
       id-token: write
     timeout-minutes: 15
-    environment: ${{ inputs.environment || 'dev' }}
+    environment: ${{ inputs.environment || 'dev' }}-${{ inputs.instanceNumber || '125' }}
     steps:
       - name: Azure Login
         uses: azure/login@v2
@@ -312,7 +312,7 @@ jobs:
       contents: read
       id-token: write
     timeout-minutes: 15
-    environment: ${{ inputs.environment || 'dev' }}
+    environment: ${{ inputs.environment || 'dev' }}-${{ inputs.instanceNumber || '125' }}
     steps:
       - name: Download frontend artifact
         uses: actions/download-artifact@v4
