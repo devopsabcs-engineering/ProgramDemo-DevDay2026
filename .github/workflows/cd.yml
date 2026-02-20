@@ -124,18 +124,12 @@ jobs:
             APP_NAME="app-${{ env.PREFIX }}-api-${{ inputs.environment }}-${{ inputs.instanceNumber }}"
             IMAGE="${{ needs.build-and-push-backend.outputs.image-tag }}"
 
-            # Update the container image
-            az webapp config container set \
-              --resource-group "${{ env.RESOURCE_GROUP }}" \
-              --name "$APP_NAME" \
-              --container-image-name "$IMAGE" \
-              --container-registry-url "https://${{ env.ACR_NAME }}.azurecr.io" \
-              --only-show-errors
-
-            # Clear any old startup command (container has its own ENTRYPOINT)
+            # Update only the image tag — do not touch registry auth settings.
+            # ACR pull uses managed identity (acrUseManagedIdentityCreds set by Bicep).
             az webapp config set \
               --resource-group "${{ env.RESOURCE_GROUP }}" \
               --name "$APP_NAME" \
+              --linux-fx-version "DOCKER|${IMAGE}" \
               --startup-file "" \
               --only-show-errors
 

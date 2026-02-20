@@ -26,9 +26,12 @@ param dockerRegistryServerUrl string = ''
 @description('Docker registry username. Leave empty for non-container deployments.')
 param dockerRegistryUsername string = ''
 
-@description('Docker registry password. Leave empty for non-container deployments.')
+@description('Docker registry password. Leave empty when using managed identity for ACR pull.')
 @secure()
 param dockerRegistryPassword string = ''
+
+@description('Client ID of the user-assigned managed identity to use for ACR pull. When non-empty, acrUseManagedIdentityCreds is enabled and registry credentials are omitted from app settings.')
+param acrUserManagedIdentityClientId string = ''
 
 @description('Custom startup command for the web app (e.g., pm2 serve command). Leave empty to use the container ENTRYPOINT or platform default.')
 param startupCommand string = ''
@@ -41,25 +44,31 @@ param userAssignedIdentityId string = ''
 
 /* ─── Variables ─── */
 
-// Merge Docker registry settings into app settings when using a container image
-var dockerSettings = !empty(dockerRegistryServerUrl) ? [
-  {
-    name: 'DOCKER_REGISTRY_SERVER_URL'
-    value: dockerRegistryServerUrl
-  }
-  {
-    name: 'DOCKER_REGISTRY_SERVER_USERNAME'
-    value: dockerRegistryUsername
-  }
-  {
-    name: 'DOCKER_REGISTRY_SERVER_PASSWORD'
-    value: dockerRegistryPassword
-  }
-  {
-    name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'
-    value: 'false'
-  }
-] : []
+// Merge Docker registry settings into app settings when using a container image.
+// When a managed identity client ID is supplied, omit username/password — the
+// platform pulls from ACR using MI credentials (acrUseManagedIdentityCreds).
+var dockerSettings = !empty(dockerRegistryServerUrl) ? concat(
+  [
+    {
+      name: 'DOCKER_REGISTRY_SERVER_URL'
+      value: dockerRegistryServerUrl
+    }
+    {
+      name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'
+      value: 'false'
+    }
+  ],
+  empty(acrUserManagedIdentityClientId) ? [
+    {
+      name: 'DOCKER_REGISTRY_SERVER_USERNAME'
+      value: dockerRegistryUsername
+    }
+    {
+      name: 'DOCKER_REGISTRY_SERVER_PASSWORD'
+      value: dockerRegistryPassword
+    }
+  ] : []
+) : []
 
 var allAppSettings = concat(appSettings, dockerSettings)
 
@@ -92,6 +101,9 @@ resource webApp 'Microsoft.Web/sites@2024-04-01' = {
       minTlsVersion: '1.2'
       // Route all outbound traffic through VNet so private endpoint DNS resolves correctly
       vnetRouteAllEnabled: !empty(vnetSubnetId)
+      // Use MI-based ACR pull when a client ID is provided — no registry password needed
+      acrUseManagedIdentityCreds: !empty(acrUserManagedIdentityClientId)
+      acrUserManagedIdentityId: !empty(acrUserManagedIdentityClientId) ? acrUserManagedIdentityClientId : null
       appSettings: allAppSettings
     }
   }

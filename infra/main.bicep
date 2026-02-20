@@ -57,6 +57,17 @@ module containerRegistry './modules/container-registry.bicep' = {
 
 /* ─── Modules: Web Applications ─── */
 
+// Grant the SQL admin MI the AcrPull role so the App Service can pull images
+// using managed identity credentials (acrUseManagedIdentityCreds: true).
+// AcrPull role definition ID: 7f951dda-4ed3-4680-a7ca-43fe172d538d
+module acrPullRole './modules/acr-role-assignment.bicep' = {
+  params: {
+    registryName: containerRegistry.outputs.name
+    principalId: sqlAdminIdentity.outputs.principalId
+    roleDefinitionId: '7f951dda-4ed3-4680-a7ca-43fe172d538d'
+  }
+}
+
 module backendApp './modules/web-app.bicep' = {
   params: {
     config: config
@@ -64,8 +75,9 @@ module backendApp './modules/web-app.bicep' = {
     appServicePlanId: appServicePlan.outputs.id
     linuxFxVersion: 'DOCKER|${containerRegistry.outputs.loginServer}/program-demo-api:latest'
     dockerRegistryServerUrl: 'https://${containerRegistry.outputs.loginServer}'
-    dockerRegistryUsername: containerRegistry.outputs.adminUsername
-    dockerRegistryPassword: containerRegistry.outputs.adminPassword
+    // Use managed identity for ACR pull — no admin password needed.
+    // The MI (sqlAdminIdentity) has AcrPull role assigned above.
+    acrUserManagedIdentityClientId: sqlAdminIdentity.outputs.clientId
     vnetSubnetId: vnet.outputs.appSubnetId
     // Attach the SQL admin managed identity so the app authenticates to SQL
     // as the AAD administrator — no separate user provisioning step needed.
