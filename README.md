@@ -177,3 +177,7 @@ This project follows a **better together** model where Azure DevOps and GitHub e
 
 Commits link back to ADO work items via `AB#{id}` syntax, and PRs auto-close work items with `Fixes AB#{id}`. This gives full traceability from ADO boards to GitHub commits while keeping code, reviews, pipelines, and security scanning in GitHub where they integrate seamlessly.
 
+### Use Local Start and Stop Scripts Before Committing
+
+Run `scripts/Start-Local.ps1` and `scripts/Stop-Local.ps1` to spin up and tear down the full stack locally before pushing changes. `Start-Local.ps1` rebuilds both backend and frontend, launches Spring Boot on port 8080 and the Vite dev server on port 3000, and supports flags like `-SkipBuild`, `-BackendOnly`, `-FrontendOnly`, and `-UseAzureSql` for flexible workflows. `Stop-Local.ps1` cleanly terminates all running processes on those ports. Running a quick local smoke test with these scripts catches build failures, API mismatches, and UI regressions before they reach CI, saving pipeline minutes and keeping the commit history clean.
+
