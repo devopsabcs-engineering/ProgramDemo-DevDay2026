@@ -1,7 +1,7 @@
 metadata name = 'OPS Program Demo Infrastructure'
 metadata description = 'Main orchestration template for the OPS Program Approval System. Deploys all Azure resources required for the Developer Day 2026 demo.'
 
-import { DeploymentConfig, SqlConfig, AppServicePlanConfig } from './types.bicep'
+import { SqlConfig, AppServicePlanConfig } from './types.bicep'
 
 /* ─── Deployment Identity Parameters ─── */
 
