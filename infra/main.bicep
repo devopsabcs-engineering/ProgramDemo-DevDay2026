@@ -26,6 +26,14 @@ module vnet './modules/vnet.bicep' = {
   }
 }
 
+// User-assigned managed identity that acts as the SQL AAD administrator.
+// It is also the identity used by the sql-user-setup deployment script.
+module sqlAdminIdentity './modules/sql-admin-identity.bicep' = {
+  params: {
+    config: config
+  }
+}
+
 module storageAccount './modules/storage.bicep' = {
   params: {
     config: config
@@ -108,7 +116,38 @@ module sqlServer './modules/sql.bicep' = {
     sqlConfig: sqlConfig
     privateEndpointSubnetId: vnet.outputs.privateEndpointSubnetId
     vnetId: vnet.outputs.vnetId
+    adminIdentityName: sqlAdminIdentity.outputs.name
+    adminIdentityClientId: sqlAdminIdentity.outputs.clientId
   }
+}
+
+// Grant the SQL admin managed identity Storage Account Contributor on the storage
+// account so the deployment script can use it for its scratch file share.
+// Uses a dedicated module because role assignment name/scope must be resolvable
+// within a module boundary, not from parent module outputs directly.
+module sqlAdminStorageRole './modules/storage-role-assignment.bicep' = {
+  name: 'sqlAdminStorageRole'
+  params: {
+    storageAccountName: storageAccount.outputs.name
+    principalId: sqlAdminIdentity.outputs.principalId
+    // Storage Account Contributor
+    roleDefinitionId: '17d1049b-9a84-46fb-8f53-869881c3d3ab'
+  }
+}
+
+// Deployment script that runs inside the VNet to create the App Service
+// managed identity as a SQL user. Replaces the sqlcmd workflow step which
+// can no longer reach SQL now that public network access is disabled.
+module sqlUserSetup './modules/sql-user-setup.bicep' = {
+  params: {
+    config: config
+    sqlServerFqdn: sqlServer.outputs.fullyQualifiedDomainName
+    appPrincipalName: backendApp.outputs.name
+    scriptsSubnetId: vnet.outputs.scriptsSubnetId
+    adminIdentityId: sqlAdminIdentity.outputs.id
+    storageAccountName: storageAccount.outputs.name
+  }
+  dependsOn: [sqlAdminStorageRole]
 }
 
 /* ─── Modules: Workflow and Notifications ─── */

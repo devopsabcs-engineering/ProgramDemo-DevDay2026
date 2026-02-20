@@ -31,7 +31,5 @@ param appServicePlanConfig = {
 /* ─── SQL Parameters ─── */
 
 param sqlConfig = {
-  aadAdminLogin: readEnvironmentVariable('SQL_AAD_ADMIN_LOGIN', 'sql-admins')
-  aadAdminObjectId: readEnvironmentVariable('SQL_AAD_ADMIN_OBJECT_ID', '')
   skuName: 'Basic'
 }

@@ -29,14 +29,11 @@ type DeploymentConfig = {
 @description('SQL Server and database configuration.')
 @sealed()
 type SqlConfig = {
-  @description('Azure AD administrator display name (user or group).')
-  aadAdminLogin: string
-
-  @description('Azure AD administrator object ID.')
-  aadAdminObjectId: string
-
   @description('SQL Database SKU name.')
   skuName: 'Basic' | 'S0' | 'S1' | 'S2' | 'P1'
+  // Note: the SQL AAD administrator is a user-assigned managed identity
+  // created automatically by the sql-admin-identity module. Human DBA
+  // access must be granted separately (out of scope for this template).
 }
 
 /* ─── App Service Configuration ─── */

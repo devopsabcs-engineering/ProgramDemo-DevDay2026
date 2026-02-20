@@ -1,5 +1,5 @@
 metadata name = 'Virtual Network'
-metadata description = 'Deploys a VNet with two subnets: one for private endpoints, one for App Service regional VNet integration.'
+metadata description = 'Deploys a VNet with three subnets: private endpoints, App Service VNet integration, and deployment script container instances.'
 
 import { DeploymentConfig } from '../types.bicep'
 
@@ -43,6 +43,25 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-05-01' = {
           ]
         }
       }
+      {
+        // Subnet for Azure Container Instances used by deployment scripts.
+        // Requires Microsoft.ContainerInstance/containerGroups delegation.
+        name: 'snet-scripts'
+        properties: {
+          addressPrefix: '10.0.3.0/24'
+          delegations: [
+            {
+              name: 'delegation-aci'
+              properties: {
+                serviceName: 'Microsoft.ContainerInstance/containerGroups'
+              }
+            }
+          ]
+          serviceEndpoints: [
+            { service: 'Microsoft.Storage' }
+          ]
+        }
+      }
     ]
   }
 }
@@ -57,3 +76,6 @@ output privateEndpointSubnetId string = vnet.properties.subnets[0].id
 
 @description('The resource ID of the App Service VNet integration subnet (snet-app).')
 output appSubnetId string = vnet.properties.subnets[1].id
+
+@description('The resource ID of the deployment scripts subnet (snet-scripts).')
+output scriptsSubnetId string = vnet.properties.subnets[2].id

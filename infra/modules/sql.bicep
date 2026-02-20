@@ -20,6 +20,12 @@ param privateEndpointSubnetId string
 @description('Resource ID of the VNet for private DNS zone linking.')
 param vnetId string
 
+@description('Name of the user-assigned managed identity acting as the SQL AAD administrator.')
+param adminIdentityName string
+
+@description('Client ID of the user-assigned managed identity acting as the SQL AAD administrator. For Application principals the sid field must be the client ID, not the object ID.')
+param adminIdentityClientId string
+
 /* ─── Resources ─── */
 
 resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' = {
@@ -34,11 +40,14 @@ resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' = {
     publicNetworkAccess: 'Disabled'
     administrators: {
       administratorType: 'ActiveDirectory'
-      login: sqlConfig.aadAdminLogin
-      sid: sqlConfig.aadAdminObjectId
+      // The SQL AAD admin is a user-assigned managed identity so that
+      // deployment scripts in the VNet can authenticate and provision DB users.
+      // Human DBA access should be added separately (e.g., via db_owner role).
+      login: adminIdentityName
+      sid: adminIdentityClientId
       tenantId: tenant().tenantId
       azureADOnlyAuthentication: true
-      principalType: 'Group'
+      principalType: 'Application'
     }
   }
 }
