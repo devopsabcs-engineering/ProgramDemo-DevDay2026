@@ -36,6 +36,11 @@ var config = {
   tags: tags
 }
 
+// Name of the pre-created Azure Files share for Function App content.
+// Must be created before the Function App because identity-based storage
+// connections cannot auto-create file shares the way key-based ones do.
+var functionContentShareName = 'func-${prefix}-${environment}-${instanceNumber}'
+
 /* ─── App Service Parameters ─── */
 
 @description('App Service Plan SKU configuration.')
@@ -65,6 +70,7 @@ module sqlAdminIdentity './modules/sql-admin-identity.bicep' = {
 module storageAccount './modules/storage.bicep' = {
   params: {
     config: config
+    functionContentShareName: functionContentShareName
   }
 }
 
@@ -193,11 +199,83 @@ module openAi './modules/openai.bicep' = {
 
 /* ─── Modules: Workflow and Notifications ─── */
 
+// User-assigned managed identity for the Function App.
+// Created before the Function App so that RBAC roles can be granted
+// before Azure tries to mount the identity-based storage file share.
+module functionIdentity './modules/function-identity.bicep' = {
+  name: 'functionIdentity'
+  params: {
+    config: config
+  }
+}
+
+// Pre-assign storage roles to the Function App MI so that identity-based
+// storage connections work during initial provisioning.
+// Storage Blob Data Owner — blob operations + lease management
+module funcStorageBlobOwner './modules/storage-role-assignment.bicep' = {
+  name: 'funcStorageBlobOwner'
+  params: {
+    storageAccountName: storageAccount.outputs.name
+    principalId: functionIdentity.outputs.principalId
+    roleDefinitionId: 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
+  }
+}
+
+// Storage Account Contributor — file share management
+module funcStorageAccountContributor './modules/storage-role-assignment.bicep' = {
+  name: 'funcStorageAccountContributor'
+  params: {
+    storageAccountName: storageAccount.outputs.name
+    principalId: functionIdentity.outputs.principalId
+    roleDefinitionId: '17d1049b-9a84-46fb-8f53-869881c3d3ab'
+  }
+}
+
+// Storage Queue Data Contributor — internal queue messaging
+module funcStorageQueueContributor './modules/storage-role-assignment.bicep' = {
+  name: 'funcStorageQueueContributor'
+  params: {
+    storageAccountName: storageAccount.outputs.name
+    principalId: functionIdentity.outputs.principalId
+    roleDefinitionId: '974c5e8b-45b9-4653-ba55-5f855dd0fb88'
+  }
+}
+
+// Storage File Data Privileged Contributor — file share content read/write
+module funcStorageFileContributor './modules/storage-role-assignment.bicep' = {
+  name: 'funcStorageFileContributor'
+  params: {
+    storageAccountName: storageAccount.outputs.name
+    principalId: functionIdentity.outputs.principalId
+    roleDefinitionId: '69566ab7-960f-475b-8e7c-b3118f30c6bd'
+  }
+}
+
+// Storage Table Data Contributor — timer trigger / durable functions history
+module funcStorageTableContributor './modules/storage-role-assignment.bicep' = {
+  name: 'funcStorageTableContributor'
+  params: {
+    storageAccountName: storageAccount.outputs.name
+    principalId: functionIdentity.outputs.principalId
+    roleDefinitionId: '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3'
+  }
+}
+
 module functionApp './modules/function-app.bicep' = {
   name: 'functionApp'
+  dependsOn: [
+    funcStorageBlobOwner
+    funcStorageAccountContributor
+    funcStorageQueueContributor
+    funcStorageFileContributor
+    funcStorageTableContributor
+  ]
   params: {
     config: config
     storageAccountName: storageAccount.outputs.name
+    userAssignedIdentityId: functionIdentity.outputs.id
+    userAssignedIdentityClientId: functionIdentity.outputs.clientId
+    contentShareName: functionContentShareName
     additionalAppSettings: [
       {
         name: 'DOCUMENT_INTELLIGENCE_ENDPOINT'
@@ -219,7 +297,7 @@ module functionApp './modules/function-app.bicep' = {
   }
 }
 
-/* ─── RBAC: Storage Blob Data Contributor (backend upload + function trigger) ─── */
+/* ─── RBAC: Storage Blob Data Contributor (backend upload) ─── */
 // Role ID: ba92f5b4-2d11-453d-a403-e96b0029c9fe
 
 module backendBlobRole './modules/storage-role-assignment.bicep' = {
@@ -232,15 +310,8 @@ module backendBlobRole './modules/storage-role-assignment.bicep' = {
   }
 }
 
-module functionBlobRole './modules/storage-role-assignment.bicep' = {
-  name: 'functionBlobRole'
-  params: {
-    storageAccountName: storageAccount.outputs.name
-    principalId: functionApp.outputs.principalId
-    // Storage Blob Data Contributor
-    roleDefinitionId: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
-  }
-}
+// Function App storage roles are assigned above (before the Function App module)
+// using the user-assigned managed identity to avoid the chicken-and-egg problem.
 
 /* ─── RBAC: Cognitive Services User (Document Intelligence) ─── */
 // Role ID: a97b65f3-24c7-4388-baec-2e87135dc908
@@ -249,7 +320,7 @@ module functionDocIntelRole './modules/cognitive-services-role-assignment.bicep'
   name: 'functionDocIntelRole'
   params: {
     accountName: documentIntelligence.outputs.name
-    principalId: functionApp.outputs.principalId
+    principalId: functionIdentity.outputs.principalId
     // Cognitive Services User
     roleDefinitionId: 'a97b65f3-24c7-4388-baec-2e87135dc908'
   }
@@ -262,7 +333,7 @@ module functionOpenAiRole './modules/cognitive-services-role-assignment.bicep' =
   name: 'functionOpenAiRole'
   params: {
     accountName: openAi.outputs.name
-    principalId: functionApp.outputs.principalId
+    principalId: functionIdentity.outputs.principalId
     // Cognitive Services OpenAI User
     roleDefinitionId: '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
   }

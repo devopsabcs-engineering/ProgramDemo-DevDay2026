@@ -27,9 +27,9 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     supportsHttpsTrafficOnly: true
     minimumTlsVersion: 'TLS1_2'
     allowBlobPublicAccess: false
-    // Shared key access is required for Azure Functions Consumption plan content
-    // share (WEBSITE_CONTENTAZUREFILECONNECTIONSTRING uses account keys).
-    allowSharedKeyAccess: true
+    // Azure Policy blocks shared-key access on this subscription.
+    // The Function App uses identity-based storage connections instead.
+    allowSharedKeyAccess: false
     networkAcls: {
       // 'AzureServices' lets the deployment script service (a trusted Azure service)
       // access the storage account for its scratch file share, even when the
@@ -54,6 +54,25 @@ resource programDocumentsContainer 'Microsoft.Storage/storageAccounts/blobServic
   name: 'program-documents'
   properties: {
     publicAccess: 'None'
+  }
+}
+
+/* ─── File Share for Function App content (pre-created so identity-based access works) ─── */
+
+resource fileService 'Microsoft.Storage/storageAccounts/fileServices@2023-05-01' = {
+  parent: storageAccount
+  name: 'default'
+}
+
+@description('Name of the Function App content share. Must match the WEBSITE_CONTENTSHARE app setting.')
+param functionContentShareName string = ''
+
+resource functionContentShare 'Microsoft.Storage/storageAccounts/fileServices/shares@2023-05-01' = if (!empty(functionContentShareName)) {
+  parent: fileService
+  name: functionContentShareName
+  properties: {
+    shareQuota: 5120
+    enabledProtocols: 'SMB'
   }
 }
 

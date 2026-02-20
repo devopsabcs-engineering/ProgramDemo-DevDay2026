@@ -1,5 +1,5 @@
 metadata name = 'Function App'
-metadata description = 'Deploys an Azure Function App on a Consumption plan for Durable Functions workflow orchestration.'
+metadata description = 'Deploys an Azure Function App on a Consumption plan for Durable Functions workflow orchestration. Uses identity-based storage connections (no shared keys) to comply with Azure Policy.'
 
 import { DeploymentConfig } from '../types.bicep'
 
@@ -11,29 +11,32 @@ param config DeploymentConfig
 @description('Name of the storage account used by the Function App runtime.')
 param storageAccountName string
 
+@description('Resource ID of the user-assigned managed identity for storage access.')
+param userAssignedIdentityId string
+
+@description('Client (application) ID of the user-assigned managed identity.')
+param userAssignedIdentityClientId string
+
+@description('Name of the pre-created file share for function content.')
+param contentShareName string
+
 @description('Additional application settings to merge into the Function App configuration.')
 param additionalAppSettings array = []
 
-/* ─── Existing Resources ─── */
-
-resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' existing = {
-  name: storageAccountName
-}
-
 /* ─── Variables ─── */
-
-var storageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}'
-
-var contentShareName = 'func-${config.prefix}-${config.environment}-${config.instanceNumber}'
 
 var baseAppSettings = [
   {
-    name: 'AzureWebJobsStorage'
-    value: storageConnectionString
+    name: 'AzureWebJobsStorage__accountName'
+    value: storageAccountName
   }
   {
-    name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
-    value: storageConnectionString
+    name: 'AzureWebJobsStorage__credential'
+    value: 'managedidentity'
+  }
+  {
+    name: 'AzureWebJobsStorage__clientId'
+    value: userAssignedIdentityClientId
   }
   {
     name: 'WEBSITE_CONTENTSHARE'
@@ -74,11 +77,15 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
   tags: config.tags
   kind: 'functionapp'
   identity: {
-    type: 'SystemAssigned'
+    type: 'SystemAssigned, UserAssigned'
+    userAssignedIdentities: {
+      '${userAssignedIdentityId}': {}
+    }
   }
   properties: {
     serverFarmId: consumptionPlan.id
     httpsOnly: true
+    keyVaultReferenceIdentity: userAssignedIdentityId
     siteConfig: {
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
