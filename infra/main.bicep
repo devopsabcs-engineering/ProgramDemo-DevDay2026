@@ -37,6 +37,7 @@ module sqlAdminIdentity './modules/sql-admin-identity.bicep' = {
 module storageAccount './modules/storage.bicep' = {
   params: {
     config: config
+    scriptsSubnetId: vnet.outputs.scriptsSubnetId
   }
 }
 
