@@ -8,9 +8,6 @@ import { DeploymentConfig } from '../types.bicep'
 @description('Common deployment configuration.')
 param config DeploymentConfig
 
-@description('Resource ID of the scripts subnet (snet-scripts). Used to allow the deployment script container to access the storage account via VNet service endpoint.')
-param scriptsSubnetId string = ''
-
 /* ─── Variables ─── */
 
 @description('Globally unique storage account name derived from resource group.')
@@ -31,18 +28,15 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     minimumTlsVersion: 'TLS1_2'
     allowBlobPublicAccess: false
     networkAcls: {
-      // 'AzureServices' allows deployment scripts and other trusted Azure services
-      // to bypass the firewall. Required when using deploymentScripts with VNet subnets.
+      // 'AzureServices' lets the deployment script service (a trusted Azure service)
+      // access the storage account for its scratch file share, even when the
+      // storage account has no public VNet rules.
+      // Do NOT add virtualNetworkRules here — any VNet rule causes Azure to treat
+      // the firewall as "enabled" which breaks deploymentScript (BCP error
+      // DeploymentScriptStorageAccountWithServiceEndpointEnabled).
       bypass: 'AzureServices'
       defaultAction: 'Allow'
-      virtualNetworkRules: !empty(scriptsSubnetId) ? [
-        {
-          // Allow the snet-scripts subnet (ACI containers running deployment scripts)
-          // to reach the storage account via the Microsoft.Storage service endpoint.
-          id: scriptsSubnetId
-          action: 'Allow'
-        }
-      ] : []
+      virtualNetworkRules: []
     }
   }
 }

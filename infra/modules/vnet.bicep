@@ -57,9 +57,6 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-05-01' = {
               }
             }
           ]
-          serviceEndpoints: [
-            { service: 'Microsoft.Storage' }
-          ]
         }
       }
     ]
