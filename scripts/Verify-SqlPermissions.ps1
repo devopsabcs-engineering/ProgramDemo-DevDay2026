@@ -306,7 +306,7 @@ function Grant-DirectoryReadersRole {
             --body "@$tempFile" `
             --only-show-errors 2>&1
         $resultStr = ($result | Out-String).Trim()
-        return if ($resultStr -match 'ERROR') { $resultStr } else { $null }
+        if ($resultStr -match 'ERROR') { return $resultStr } else { return $null }
     } finally {
         Remove-Item $tempFile -ErrorAction SilentlyContinue
     }
