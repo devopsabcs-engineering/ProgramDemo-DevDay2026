@@ -103,7 +103,7 @@ resource webApp 'Microsoft.Web/sites@2024-04-01' = {
       vnetRouteAllEnabled: !empty(vnetSubnetId)
       // Use MI-based ACR pull when a client ID is provided — no registry password needed
       acrUseManagedIdentityCreds: !empty(acrUserManagedIdentityClientId)
-      acrUserManagedIdentityId: !empty(acrUserManagedIdentityClientId) ? acrUserManagedIdentityClientId : null
+      acrUserManagedIdentityID: !empty(acrUserManagedIdentityClientId) ? acrUserManagedIdentityClientId : null
       appSettings: allAppSettings
     }
   }

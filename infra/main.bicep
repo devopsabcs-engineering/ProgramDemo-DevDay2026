@@ -3,10 +3,38 @@ metadata description = 'Main orchestration template for the OPS Program Approval
 
 import { DeploymentConfig, SqlConfig, AppServicePlanConfig } from './types.bicep'
 
-/* ─── Common Parameters ─── */
+/* ─── Deployment Identity Parameters ─── */
 
-@description('Common deployment configuration.')
-param config DeploymentConfig
+@description('Resource name prefix for all resources (e.g. ops-demo).')
+param prefix string = 'ops-demo'
+
+@description('Azure region for resource deployment.')
+param location string = 'canadacentral'
+
+@description('Deployment environment.')
+@allowed(['dev', 'test', 'prod'])
+param environment string = 'dev'
+
+@description('Instance number for resource naming (e.g. 125). Required — no default.')
+param instanceNumber string
+
+@description('Tags applied to all resources.')
+param tags object = {
+  project: 'OPS-ProgramDemo'
+  environment: environment
+  managedBy: 'bicep'
+  demo: 'DevDay2026'
+}
+
+// Assemble the shared config object from flat params so the workflow can
+// override environment and instanceNumber with --parameters on the CLI.
+var config = {
+  prefix: prefix
+  location: location
+  environment: environment
+  instanceNumber: instanceNumber
+  tags: tags
+}
 
 /* ─── App Service Parameters ─── */
 

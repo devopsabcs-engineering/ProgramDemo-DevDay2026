@@ -63,7 +63,8 @@ jobs:
             az deployment group validate \
               --resource-group "rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
               --template-file "${{ env.BICEP_DIR }}/main.bicep" \
-              --parameters "${{ env.BICEP_DIR }}/main.bicepparam"
+              --parameters "${{ env.BICEP_DIR }}/main.bicepparam" \
+              --parameters environment="${{ inputs.environment }}" instanceNumber="${{ inputs.instanceNumber }}"
 
       - name: What-If analysis
         uses: azure/cli@v2
@@ -72,7 +73,8 @@ jobs:
             az deployment group what-if \
               --resource-group "rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
               --template-file "${{ env.BICEP_DIR }}/main.bicep" \
-              --parameters "${{ env.BICEP_DIR }}/main.bicepparam"
+              --parameters "${{ env.BICEP_DIR }}/main.bicepparam" \
+              --parameters environment="${{ inputs.environment }}" instanceNumber="${{ inputs.instanceNumber }}"
 
   deploy:
     name: Deploy to Azure
@@ -114,6 +116,7 @@ jobs:
               --resource-group "rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
               --template-file "${{ env.BICEP_DIR }}/main.bicep" \
               --parameters "${{ env.BICEP_DIR }}/main.bicepparam" \
+              --parameters environment="${{ inputs.environment }}" instanceNumber="${{ inputs.instanceNumber }}" \
               --name "infra-$(date +%Y%m%d%H%M%S)"
 
       - name: Show deployment outputs

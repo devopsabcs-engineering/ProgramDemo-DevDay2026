@@ -157,7 +157,7 @@ if [[ "${USE_AZURE_SQL}" == true && "${FRONTEND_ONLY}" == false ]]; then
     yellow ""
     yellow "  Ensure your client IP is allowed in the Azure SQL firewall."
     yellow "  If connection fails, add your IP via Azure Portal or:"
-    gray   "  az sql server firewall-rule create -g <rg> -s sql-ops-demo-dev-XYZ -n MyIP --start-ip-address <IP> --end-ip-address <IP>"
+    gray   "  az sql server firewall-rule create -g <rg> -s sql-ops-demo-dev-125 -n MyIP --start-ip-address <IP> --end-ip-address <IP>"
 fi
 
 # 1. Stop existing processes

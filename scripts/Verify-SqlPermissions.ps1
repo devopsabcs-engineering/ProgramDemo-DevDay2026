@@ -36,7 +36,7 @@
 .EXAMPLE
     .\Verify-SqlPermissions.ps1
     .\Verify-SqlPermissions.ps1 -FixIssues
-    .\Verify-SqlPermissions.ps1 -Environment dev -InstanceNumber XYZ -FixIssues
+    .\Verify-SqlPermissions.ps1 -Environment dev -InstanceNumber 125 -FixIssues
 #>
 
 [CmdletBinding()]
