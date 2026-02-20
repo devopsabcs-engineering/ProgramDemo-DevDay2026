@@ -8,6 +8,9 @@ import { DeploymentConfig } from '../types.bicep'
 @description('Common deployment configuration.')
 param config DeploymentConfig
 
+@description('Override location for the OpenAI resource (some models are not available in all regions).')
+param location string = config.location
+
 @description('Chat model deployment name.')
 param chatModelDeploymentName string = 'gpt-4o-mini'
 
@@ -19,7 +22,7 @@ var resourceToken = '${config.prefix}-${config.environment}-${config.instanceNum
 
 resource openAi 'Microsoft.CognitiveServices/accounts@2024-04-01-preview' = {
   name: 'oai-${resourceToken}'
-  location: config.location
+  location: location
   tags: config.tags
   kind: 'OpenAI'
   sku: {
