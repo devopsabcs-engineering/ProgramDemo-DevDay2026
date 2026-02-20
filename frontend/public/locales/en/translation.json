@@ -11,7 +11,8 @@
     "ontarioLogo": "Ontario",
     "nav": {
       "submit": "Submit Program",
-      "search": "Search Programs"
+      "search": "Search Programs",
+      "review": "Review Programs"
     }
   },
   "footer": {
@@ -102,5 +103,50 @@
   },
   "success": {
     "title": "Success"
+  },
+  "review": {
+    "dashboard": {
+      "title": "Review Programs",
+      "description": "Review, approve, or reject submitted program requests.",
+      "filterLabel": "Filter by Status",
+      "filterAll": "All Statuses",
+      "loading": "Loading submissions...",
+      "error": "An error occurred while loading submissions.",
+      "noResults": "No submissions found for the selected filter.",
+      "reviewButton": "Review"
+    },
+    "detail": {
+      "title": "Program Review",
+      "loading": "Loading program details...",
+      "error": "An error occurred while loading program details.",
+      "backToDashboard": "Back to Review Dashboard",
+      "referenceNumber": "Reference Number",
+      "programType": "Program Type",
+      "status": "Status",
+      "description": "Description",
+      "submittedBy": "Submitted By",
+      "submittedDate": "Submitted Date",
+      "documentUrl": "Supporting Document",
+      "reviewedBy": "Reviewed By",
+      "reviewComments": "Review Comments",
+      "alreadyReviewedTitle": "Review Complete",
+      "alreadyReviewedMessage": "This program has already been reviewed. Current status: {{status}}."
+    },
+    "form": {
+      "title": "Submit Review Decision",
+      "reviewerName": "Reviewer Name",
+      "reviewerPlaceholder": "Enter your full name",
+      "reviewerRequired": "Reviewer name is required.",
+      "decision": "Decision",
+      "approve": "Approve",
+      "reject": "Reject",
+      "comments": "Review Comments",
+      "commentsPlaceholder": "Enter your review comments...",
+      "commentsRequiredForReject": "Comments are required when rejecting a submission.",
+      "approveButton": "Approve Program",
+      "rejectButton": "Reject Program",
+      "submitting": "Submitting...",
+      "submitError": "An error occurred while submitting the review."
+    }
   }
 }

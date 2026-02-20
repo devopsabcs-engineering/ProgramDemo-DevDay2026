@@ -19,6 +19,7 @@ export function Header() {
   const navItems = [
     { to: '/', label: t('header.nav.submit') },
     { to: '/search', label: t('header.nav.search') },
+    { to: '/review', label: t('header.nav.review') },
   ];
 
   const isActive = (path: string) => {

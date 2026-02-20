@@ -11,7 +11,8 @@
     "ontarioLogo": "Ontario",
     "nav": {
       "submit": "Soumettre un programme",
-      "search": "Rechercher des programmes"
+      "search": "Rechercher des programmes",
+      "review": "Examiner les programmes"
     }
   },
   "footer": {
@@ -102,5 +103,50 @@
   },
   "success": {
     "title": "Succès"
+  },
+  "review": {
+    "dashboard": {
+      "title": "Examiner les programmes",
+      "description": "Examiner, approuver ou rejeter les demandes de programmes soumises.",
+      "filterLabel": "Filtrer par statut",
+      "filterAll": "Tous les statuts",
+      "loading": "Chargement des soumissions...",
+      "error": "Une erreur s'est produite lors du chargement des soumissions.",
+      "noResults": "Aucune soumission trouvée pour le filtre sélectionné.",
+      "reviewButton": "Examiner"
+    },
+    "detail": {
+      "title": "Examen du programme",
+      "loading": "Chargement des détails du programme...",
+      "error": "Une erreur s'est produite lors du chargement des détails du programme.",
+      "backToDashboard": "Retour au tableau de bord d'examen",
+      "referenceNumber": "Numéro de référence",
+      "programType": "Type de programme",
+      "status": "Statut",
+      "description": "Description",
+      "submittedBy": "Soumis par",
+      "submittedDate": "Date de soumission",
+      "documentUrl": "Document justificatif",
+      "reviewedBy": "Examiné par",
+      "reviewComments": "Commentaires d'examen",
+      "alreadyReviewedTitle": "Examen terminé",
+      "alreadyReviewedMessage": "Ce programme a déjà été examiné. Statut actuel : {{status}}."
+    },
+    "form": {
+      "title": "Soumettre la décision d'examen",
+      "reviewerName": "Nom de l'examinateur",
+      "reviewerPlaceholder": "Entrez votre nom complet",
+      "reviewerRequired": "Le nom de l'examinateur est obligatoire.",
+      "decision": "Décision",
+      "approve": "Approuver",
+      "reject": "Rejeter",
+      "comments": "Commentaires d'examen",
+      "commentsPlaceholder": "Entrez vos commentaires d'examen...",
+      "commentsRequiredForReject": "Les commentaires sont obligatoires lors du rejet d'une soumission.",
+      "approveButton": "Approuver le programme",
+      "rejectButton": "Rejeter le programme",
+      "submitting": "Soumission en cours...",
+      "submitError": "Une erreur s'est produite lors de la soumission de l'examen."
+    }
   }
 }
