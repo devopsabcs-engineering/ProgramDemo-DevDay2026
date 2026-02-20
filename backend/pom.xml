@@ -57,12 +57,18 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Azure Identity for Azure AD authentication with SQL Server -->
+        <!-- Azure Identity for Azure AD authentication with SQL Server and Blob Storage -->
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-identity</artifactId>
             <version>1.15.4</version>
-            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Azure Blob Storage SDK for PDF document upload -->
+        <dependency>
+            <groupId>com.azure</groupId>
+            <artifactId>azure-storage-blob</artifactId>
+            <version>12.28.0</version>
         </dependency>
 
         <!-- Lombok -->

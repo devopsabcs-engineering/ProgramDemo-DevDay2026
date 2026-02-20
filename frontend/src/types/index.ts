@@ -12,7 +12,6 @@ export interface ProgramRequest {
   programDescription: string;
   programTypeId: number;
   submittedBy?: string;
-  documentUrl?: string;
   /** Requested budget in Canadian dollars (optional). */
   budget?: number | null;
 }

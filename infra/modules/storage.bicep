@@ -41,6 +41,19 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   }
 }
 
+resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-05-01' = {
+  parent: storageAccount
+  name: 'default'
+}
+
+resource programDocumentsContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: blobService
+  name: 'program-documents'
+  properties: {
+    publicAccess: 'None'
+  }
+}
+
 /* ─── Outputs ─── */
 
 @description('The resource ID of the storage account.')
@@ -48,3 +61,6 @@ output id string = storageAccount.id
 
 @description('The name of the storage account.')
 output name string = storageAccount.name
+
+@description('Blob service URI for use in application configuration.')
+output blobServiceUri string = storageAccount.properties.primaryEndpoints.blob

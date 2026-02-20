@@ -131,6 +131,10 @@ module backendApp './modules/web-app.bicep' = {
         name: 'APP_CORS_ALLOWED_ORIGIN'
         value: 'https://app-${config.prefix}-web-${config.environment}-${config.instanceNumber}.azurewebsites.net'
       }
+      {
+        name: 'AZURE_STORAGE_BLOB_SERVICE_URI'
+        value: storageAccount.outputs.blobServiceUri
+      }
     ]
   }
 }
@@ -169,12 +173,97 @@ module sqlServer './modules/sql.bicep' = {
   }
 }
 
+/* ─── Modules: AI Services ─── */
+
+module documentIntelligence './modules/document-intelligence.bicep' = {
+  name: 'documentIntelligence'
+  params: {
+    config: config
+  }
+}
+
+module openAi './modules/openai.bicep' = {
+  name: 'openAi'
+  params: {
+    config: config
+    chatModelDeploymentName: 'gpt-4o'
+  }
+}
+
 /* ─── Modules: Workflow and Notifications ─── */
 
 module functionApp './modules/function-app.bicep' = {
+  name: 'functionApp'
   params: {
     config: config
     storageAccountName: storageAccount.outputs.name
+    additionalAppSettings: [
+      {
+        name: 'DOCUMENT_INTELLIGENCE_ENDPOINT'
+        value: documentIntelligence.outputs.endpoint
+      }
+      {
+        name: 'AZURE_OPENAI_ENDPOINT'
+        value: openAi.outputs.endpoint
+      }
+      {
+        name: 'AZURE_OPENAI_DEPLOYMENT'
+        value: openAi.outputs.deploymentName
+      }
+      {
+        name: 'API_BASE_URL'
+        value: 'https://${backendApp.outputs.defaultHostName}'
+      }
+    ]
+  }
+}
+
+/* ─── RBAC: Storage Blob Data Contributor (backend upload + function trigger) ─── */
+// Role ID: ba92f5b4-2d11-453d-a403-e96b0029c9fe
+
+module backendBlobRole './modules/storage-role-assignment.bicep' = {
+  name: 'backendBlobRole'
+  params: {
+    storageAccountName: storageAccount.outputs.name
+    principalId: backendApp.outputs.principalId
+    // Storage Blob Data Contributor
+    roleDefinitionId: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
+  }
+}
+
+module functionBlobRole './modules/storage-role-assignment.bicep' = {
+  name: 'functionBlobRole'
+  params: {
+    storageAccountName: storageAccount.outputs.name
+    principalId: functionApp.outputs.principalId
+    // Storage Blob Data Contributor
+    roleDefinitionId: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
+  }
+}
+
+/* ─── RBAC: Cognitive Services User (Document Intelligence) ─── */
+// Role ID: a97b65f3-24c7-4388-baec-2e87135dc908
+
+module functionDocIntelRole './modules/cognitive-services-role-assignment.bicep' = {
+  name: 'functionDocIntelRole'
+  params: {
+    accountName: documentIntelligence.outputs.name
+    principalId: functionApp.outputs.principalId
+    // Cognitive Services User
+    roleDefinitionId: 'a97b65f3-24c7-4388-baec-2e87135dc908'
+  }
+}
+
+/* ─── RBAC: Cognitive Services OpenAI User (Azure OpenAI) ─── */
+// Role ID: 5e0bd9bd-7b93-4f28-af87-19fc36ad61bd
+
+module functionOpenAiRole './modules/cognitive-services-role-assignment.bicep' = {
+  name: 'functionOpenAiRole'
+  params: {
+    accountName: openAi.outputs.name
+    principalId: functionApp.outputs.principalId
+    // Cognitive Services OpenAI User
+    roleDefinitionId: '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
   }
 }
 

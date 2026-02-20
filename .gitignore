@@ -6,6 +6,9 @@
 # Figma files
 *.fig
 
+# Azure Functions local settings (contain secrets; use local.settings.json.example for templates)
+functions/**/local.settings.json
+
 # User-specific files
 *.rsuser
 *.suo
