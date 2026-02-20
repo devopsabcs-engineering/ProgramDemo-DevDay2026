@@ -40,6 +40,15 @@ module storageAccount './modules/storage.bicep' = {
   }
 }
 
+// Dedicated storage account for deployment script scratch space.
+// Kept separate so Azure Policy-injected resourceAccessRules (Defender for Storage)
+// do not cause DeploymentScriptStorageAccountWithServiceEndpointEnabled errors.
+module scriptsStorage './modules/storage-scripts.bicep' = {
+  params: {
+    config: config
+  }
+}
+
 module appServicePlan './modules/app-service-plan.bicep' = {
   params: {
     config: config
@@ -128,7 +137,7 @@ module sqlServer './modules/sql.bicep' = {
 module sqlAdminStorageRole './modules/storage-role-assignment.bicep' = {
   name: 'sqlAdminStorageRole'
   params: {
-    storageAccountName: storageAccount.outputs.name
+    storageAccountName: scriptsStorage.outputs.name
     principalId: sqlAdminIdentity.outputs.principalId
     // Storage Account Contributor
     roleDefinitionId: '17d1049b-9a84-46fb-8f53-869881c3d3ab'
@@ -145,7 +154,7 @@ module sqlUserSetup './modules/sql-user-setup.bicep' = {
     appPrincipalName: backendApp.outputs.name
     scriptsSubnetId: vnet.outputs.scriptsSubnetId
     adminIdentityId: sqlAdminIdentity.outputs.id
-    storageAccountName: storageAccount.outputs.name
+    storageAccountName: scriptsStorage.outputs.name
   }
   dependsOn: [sqlAdminStorageRole]
 }
