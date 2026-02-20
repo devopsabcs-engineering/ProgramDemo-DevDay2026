@@ -1,3 +1,5 @@
+John Thompson
+123 Elm Street
 Springfield, ON P0A 1X0
 Email: john.thompson@example.com
 Phone: 705-555-0101
@@ -12,7 +14,7 @@ Subject: Proposal for a Rural Mental Health Outreach Program
 
 Dear Sir or Madam,
 
-I am writing as a concerned resident of Northern Ontario to propose the creation of a "Rural Mental Wellness Outreach Program" to improve access to mental health services in our community. This program would deploy mobile mental health clinics and support teams to serve remote and underserviced areas of our region. Currently, many residents in small towns and rural areas must travel several hours to the nearest city to receive counseling or psychiatric care, leading to significant barriers for those seeking help.
+I am writing as a concerned resident of Northern Ontario to propose the creation of a “Rural Mental Wellness Outreach Program” to improve access to mental health services in our community. This program would deploy mobile mental health clinics and support teams to serve remote and underserviced areas of our region. Currently, many residents in small towns and rural areas must travel several hours to the nearest city to receive counseling or psychiatric care, leading to significant barriers for those seeking help.
 
 **Description of the Proposed Program:**
 The Rural Mental Wellness Outreach Program would consist of mobile clinics staffed by mental health professionals (such as counselors, social workers, and nurses) who travel on a regular schedule to outlying communities. These clinics would provide services like one-on-one counseling, mental health check-ups, referrals to specialized care, and workshops on coping strategies and mental health education. The program would partner with local health units and community centers to host these mobile clinic days in accessible locations (e.g. community halls or schools).

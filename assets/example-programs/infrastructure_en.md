@@ -1,4 +1,4 @@
- Peter McMillan
+Peter McMillan
 12 Lakeshore Road
 Sioux Lookout, ON P8T 1A1
 Email: peter.mcmillan@example.com
@@ -14,7 +14,7 @@ Subject: Proposal for a Rural Broadband Internet Expansion Program
 
 Dear Sir or Madam,
 
-I am writing as a resident of a northern Ontario community to propose a "Rural Broadband Internet Expansion Program" to improve high-speed internet access in underserved rural and remote areas of our province. Reliable internet is no longer a luxury — it is an essential service for education, healthcare (such as telemedicine), business, and daily life. However, many rural communities like ours continue to face slow, unreliable, or nonexistent internet connections.
+I am writing as a resident of a northern Ontario community to propose a “Rural Broadband Internet Expansion Program” to improve high-speed internet access in underserved rural and remote areas of our province. Reliable internet is no longer a luxury — it is an essential service for education, healthcare (such as telemedicine), business, and daily life. However, many rural communities like ours continue to face slow, unreliable, or nonexistent internet connections.
 
 **Description of the Proposed Program:**
 The proposed program would involve investing in broadband infrastructure (e.g., fiber-optic lines, new wireless towers or satellite internet technology) to bring high-speed internet to rural and remote regions. The program could offer incentives, funding, or public-private partnerships with internet service providers to expand their networks beyond urban centers. It would begin with a comprehensive assessment to identify communities with the greatest need (such as those with no broadband service or with speeds below the CRTC’s basic service standards). The program would set phased targets to connect these communities to reliable high-speed internet over the next few years.
@@ -25,7 +25,7 @@ The proposed program would involve investing in broadband infrastructure (e.g., 
 - Improve the quality of life for rural citizens by providing better access to information, government services, and opportunities for remote work or online learning.
 
 **Expected Outcomes:**
-- Substantial increases in internet speeds and connectivity in targeted rural communities, with measurable improvements in the percentage of households having high-speed internet (meeting or exceeding 50 Mbps download / 10 Mbps upload).
+- Substantial increases in internet speeds and connectivity in targeted rural communities, with measurable improvements in the percentage of households having high-speed internet (meeting or exceeding 50 Mbps download / 10 Mbps upload).
 - Economic growth in rural areas as businesses expand online activities, farmers use digital tools for smart farming, and entrepreneurs can work from their communities without relocating.
 - Enhanced delivery of education and healthcare services, evidenced by greater use of e-learning platforms in rural schools and more telemedicine consultations for remote patients.
 

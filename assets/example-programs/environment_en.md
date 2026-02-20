@@ -1,7 +1,6 @@
 Alice Wong
 789 Maple Avenue
 Toronto, ON M4K 2R1
-
 Email: alice.wong@example.com
 Phone: 416-555-0199
 
@@ -15,7 +14,7 @@ Subject: Proposal for a Community Greening and Urban Tree-Planting Initiative
 
 Dear Sir or Madam,
 
-I am writing as a concerned citizen and community volunteer in Toronto to propose a new "Community Greening and Urban Tree-Planting Initiative" to increase green spaces and tree cover in our urban neighborhoods. This program would support and fund local tree-planting drives and the creation of community gardens in cities and towns across Ontario. As climate change leads to hotter summers and more extreme weather, expanding our urban tree canopy and green spaces is essential to improve air quality, reduce the urban heat island effect, and enhance the well-being of residents.
+I am writing as a concerned citizen and community volunteer in Toronto to propose a new “Community Greening and Urban Tree-Planting Initiative” to increase green spaces and tree cover in our urban neighborhoods. This program would support and fund local tree-planting drives and the creation of community gardens in cities and towns across Ontario. As climate change leads to hotter summers and more extreme weather, expanding our urban tree canopy and green spaces is essential to improve air quality, reduce the urban heat island effect, and enhance the well-being of residents.
 
 **Description of the Proposed Program:**
 The Community Greening and Urban Tree-Planting Initiative would provide grants and resources to municipalities, local community groups, and schools to plant native trees and create green spaces (such as community gardens or parkettes) in densely populated areas. The program would include an educational component, offering workshops for citizens on tree care, urban gardening, and environmental stewardship. It could be administered in partnership with conservation authorities and local environmental non-profits, ensuring that tree species are appropriate for each region and that plantings are well-maintained for long-term survival.
