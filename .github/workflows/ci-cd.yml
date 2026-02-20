@@ -213,18 +213,18 @@ jobs:
           # Use the GitHub API to create the tag so the push is not blocked
           # by the workflows permission check that git-push enforces when
           # the tagged commit touches .github/workflows/ files.
-          gh api "repos/${{ github.repository }}/git/tags" \
+          TAG_SHA=$(gh api "repos/${{ github.repository }}/git/tags" \
             --method POST \
             -f tag="${VERSION}" \
             -f message="${VERSION}" \
             -f object="${SHA}" \
             -f type="commit" \
-            --jq '.sha' -q > tag_sha.txt
+            --jq '.sha')
 
           gh api "repos/${{ github.repository }}/git/refs" \
             --method POST \
             -f "ref=refs/tags/${VERSION}" \
-            -f "sha=$(cat tag_sha.txt)"
+            -f "sha=${TAG_SHA}"
 
 # ─────────────────────────────────────────────
 # Stage 3: CD — runs after tagging
