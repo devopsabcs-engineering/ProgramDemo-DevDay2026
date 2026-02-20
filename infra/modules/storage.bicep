@@ -27,6 +27,9 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     supportsHttpsTrafficOnly: true
     minimumTlsVersion: 'TLS1_2'
     allowBlobPublicAccess: false
+    // Shared key access is required for Azure Functions Consumption plan content
+    // share (WEBSITE_CONTENTAZUREFILECONNECTIONSTRING uses account keys).
+    allowSharedKeyAccess: true
     networkAcls: {
       // 'AzureServices' lets the deployment script service (a trusted Azure service)
       // access the storage account for its scratch file share, even when the
