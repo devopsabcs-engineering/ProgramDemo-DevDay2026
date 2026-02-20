@@ -36,6 +36,9 @@ param startupCommand string = ''
 @description('Resource ID of the VNet integration subnet. Leave empty to skip VNet integration.')
 param vnetSubnetId string = ''
 
+@description('Resource ID of a user-assigned managed identity to attach. Leave empty for system-assigned only.')
+param userAssignedIdentityId string = ''
+
 /* ─── Variables ─── */
 
 // Merge Docker registry settings into app settings when using a container image
@@ -66,7 +69,14 @@ resource webApp 'Microsoft.Web/sites@2024-04-01' = {
   name: 'app-${config.prefix}-${appSuffix}-${config.environment}-${config.instanceNumber}'
   location: config.location
   tags: config.tags
-  identity: {
+  // When a user-assigned identity is provided, attach it alongside the system-assigned
+  // identity so the app can authenticate to Azure services as either identity.
+  identity: !empty(userAssignedIdentityId) ? {
+    type: 'SystemAssigned, UserAssigned'
+    userAssignedIdentities: {
+      '${userAssignedIdentityId}': {}
+    }
+  } : {
     type: 'SystemAssigned'
   }
   properties: {

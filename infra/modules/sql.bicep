@@ -26,6 +26,9 @@ param adminIdentityName string
 @description('Client ID of the user-assigned managed identity acting as the SQL AAD administrator. For Application principals the sid field must be the client ID, not the object ID.')
 param adminIdentityClientId string
 
+@description('Client ID of the user-assigned managed identity that the App Service uses to authenticate to SQL. Embedded in the JDBC connection string as msiClientId.')
+param appMsiClientId string
+
 /* ─── Resources ─── */
 
 resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' = {
@@ -135,4 +138,4 @@ output serverName string = sqlServer.name
 output databaseName string = sqlDatabase.name
 
 @description('The JDBC connection string for the database (Azure AD auth).')
-output jdbcConnectionString string = 'jdbc:sqlserver://${sqlServer.properties.fullyQualifiedDomainName}:1433;database=${sqlDatabase.name};encrypt=true;trustServerCertificate=true;hostNameInCertificate=*.database.windows.net;loginTimeout=30;authentication=ActiveDirectoryManagedIdentity;'
+output jdbcConnectionString string = 'jdbc:sqlserver://${sqlServer.properties.fullyQualifiedDomainName}:1433;database=${sqlDatabase.name};encrypt=true;trustServerCertificate=true;hostNameInCertificate=*.database.windows.net;loginTimeout=30;authentication=ActiveDirectoryManagedIdentity;msiClientId=${appMsiClientId};'

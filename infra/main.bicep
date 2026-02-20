@@ -40,15 +40,6 @@ module storageAccount './modules/storage.bicep' = {
   }
 }
 
-// Dedicated storage account for deployment script scratch space.
-// Kept separate so Azure Policy-injected resourceAccessRules (Defender for Storage)
-// do not cause DeploymentScriptStorageAccountWithServiceEndpointEnabled errors.
-module scriptsStorage './modules/storage-scripts.bicep' = {
-  params: {
-    config: config
-  }
-}
-
 module appServicePlan './modules/app-service-plan.bicep' = {
   params: {
     config: config
@@ -76,6 +67,9 @@ module backendApp './modules/web-app.bicep' = {
     dockerRegistryUsername: containerRegistry.outputs.adminUsername
     dockerRegistryPassword: containerRegistry.outputs.adminPassword
     vnetSubnetId: vnet.outputs.appSubnetId
+    // Attach the SQL admin managed identity so the app authenticates to SQL
+    // as the AAD administrator — no separate user provisioning step needed.
+    userAssignedIdentityId: sqlAdminIdentity.outputs.id
     appSettings: [
       {
         name: 'SPRING_DATASOURCE_URL'
@@ -127,36 +121,8 @@ module sqlServer './modules/sql.bicep' = {
     vnetId: vnet.outputs.vnetId
     adminIdentityName: sqlAdminIdentity.outputs.name
     adminIdentityClientId: sqlAdminIdentity.outputs.clientId
+    appMsiClientId: sqlAdminIdentity.outputs.clientId
   }
-}
-
-// Grant the SQL admin managed identity Storage Account Contributor on the storage
-// account so the deployment script can use it for its scratch file share.
-// Uses a dedicated module because role assignment name/scope must be resolvable
-// within a module boundary, not from parent module outputs directly.
-module sqlAdminStorageRole './modules/storage-role-assignment.bicep' = {
-  name: 'sqlAdminStorageRole'
-  params: {
-    storageAccountName: scriptsStorage.outputs.name
-    principalId: sqlAdminIdentity.outputs.principalId
-    // Storage Account Contributor
-    roleDefinitionId: '17d1049b-9a84-46fb-8f53-869881c3d3ab'
-  }
-}
-
-// Deployment script that runs inside the VNet to create the App Service
-// managed identity as a SQL user. Replaces the sqlcmd workflow step which
-// can no longer reach SQL now that public network access is disabled.
-module sqlUserSetup './modules/sql-user-setup.bicep' = {
-  params: {
-    config: config
-    sqlServerFqdn: sqlServer.outputs.fullyQualifiedDomainName
-    appPrincipalName: backendApp.outputs.name
-    scriptsSubnetId: vnet.outputs.scriptsSubnetId
-    adminIdentityId: sqlAdminIdentity.outputs.id
-    storageAccountName: scriptsStorage.outputs.name
-  }
-  dependsOn: [sqlAdminStorageRole]
 }
 
 /* ─── Modules: Workflow and Notifications ─── */
