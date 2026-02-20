@@ -12,7 +12,7 @@ param config = {
   prefix: prefix
   location: location
   environment: environment
-  instanceNumber: '125'
+  instanceNumber: 'XYZ'
   tags: {
     project: 'OPS-ProgramDemo'
     environment: environment

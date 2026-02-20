@@ -13,7 +13,7 @@
 
 spring:
   datasource:
-    url: jdbc:sqlserver://sql-ops-demo-dev-125.database.windows.net:1433;database=programdb;encrypt=true;trustServerCertificate=true;hostNameInCertificate=*.database.windows.net;loginTimeout=30;authentication=ActiveDirectoryDefault;
+    url: jdbc:sqlserver://sql-ops-demo-dev-123.database.windows.net:1433;database=programdb;encrypt=true;trustServerCertificate=true;hostNameInCertificate=*.database.windows.net;loginTimeout=30;authentication=ActiveDirectoryDefault;
     username:
     password:
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver

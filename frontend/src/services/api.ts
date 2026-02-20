@@ -6,7 +6,7 @@ import type { ProgramRequest, ProgramResponse, ReviewRequest } from '../types';
  *
  * In local development, Vite proxies '/api' to the backend.
  * In production, VITE_API_URL is set to the full backend URL
- * (e.g. https://app-ops-demo-api-dev-125.azurewebsites.net/api).
+ * (e.g. https://app-ops-demo-api-dev-XYZ.azurewebsites.net/api).
  */
 const API_BASE_URL = import.meta.env.VITE_API_URL
   ? `${import.meta.env.VITE_API_URL}/api`

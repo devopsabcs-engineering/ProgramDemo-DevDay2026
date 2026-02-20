@@ -15,7 +15,7 @@ on:
       instanceNumber:
         description: 'Instance number for resource naming (overrides vars.INSTANCE_NUMBER)'
         required: true
-        default: '125'  # UI hint only — GitHub does not support expressions here. Keep in sync with vars.INSTANCE_NUMBER.
+        default: '123'  # UI hint only — GitHub does not support expressions here. Keep in sync with vars.INSTANCE_NUMBER.
         type: string
   push:
     branches:

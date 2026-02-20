@@ -57,7 +57,7 @@ var deploymentDefaults = {
   prefix: 'ops-demo'
   location: 'canadacentral'
   environment: 'dev'
-  instanceNumber: '125'
+  instanceNumber: 'XYZ'
   tags: {
     project: 'OPS-ProgramDemo'
     environment: 'dev'
