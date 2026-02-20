@@ -186,7 +186,7 @@ module openAi './modules/openai.bicep' = {
   name: 'openAi'
   params: {
     config: config
-    location: 'canadaeast'
+    location: 'eastus'
     chatModelDeploymentName: 'gpt-4o-mini'
   }
 }

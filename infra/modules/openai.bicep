@@ -39,7 +39,7 @@ resource chatDeployment 'Microsoft.CognitiveServices/accounts/deployments@2024-0
   parent: openAi
   name: chatModelDeploymentName
   sku: {
-    name: 'Standard'
+    name: 'GlobalStandard'
     capacity: 30
   }
   properties: {
