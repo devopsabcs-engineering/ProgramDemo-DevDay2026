@@ -1,20 +1,24 @@
 <#
 .SYNOPSIS
-    Verifies and grants all permissions required for the deploy-infra workflow
-    to create SQL users via managed identity.
+    Verifies and fixes the SQL AAD admin configuration for the OPS Program Demo.
 
 .DESCRIPTION
-    This script checks and fixes:
-    1. The SQL AAD admin group exists in Entra ID.
-    2. The GitHub Actions service principal is a member of that group.
-    3. The backend App Service managed identity exists.
-    4. The SQL AAD admin group has the Directory Readers role (needed to
-       resolve managed identity names during CREATE USER FROM EXTERNAL PROVIDER).
-    5. The backend managed identity has the required SQL database roles
-       (db_datareader, db_datawriter, db_ddladmin).
+    The SQL Server uses a user-assigned managed identity (id-sql-admin-*) as its
+    AAD administrator. The App Service runs as that same identity, so no separate
+    SQL user provisioning is required.
 
-    The script is idempotent — it only adds missing permissions and reports
-    what was already in place.
+    This script checks and fixes:
+    1. SQL Server AAD admin is configured.
+    2. Admin sid == MI principalId (Object ID).  The most common misconfiguration
+       is that the sid was set to the clientId instead.  SQL Server compares the
+       sid against the oid claim in the AAD token — they must match.
+    3. MI has Directory Readers role in Entra ID (needed to resolve external
+       provider names during CREATE USER FROM EXTERNAL PROVIDER).
+    4. Backend App Service has the user-assigned MI attached.
+    5. SQL connectivity smoke-test using the caller's own AAD token (works only
+       when run from a machine with network access to the SQL private endpoint).
+
+    The script is idempotent — it only fixes what is wrong.
 
 .PARAMETER Environment
     Target environment (dev, test, prod). Default: dev
@@ -25,22 +29,14 @@
 .PARAMETER Prefix
     Resource naming prefix. Default: ops-demo
 
-.PARAMETER ServicePrincipalAppId
-    The Application (client) ID of the GitHub Actions service principal
-    (AZURE_CLIENT_ID). If not provided, uses the current az login identity.
-
-.PARAMETER SqlAdminGroupId
-    The Object ID of the Entra ID group set as SQL AAD admin
-    (SQL_AAD_ADMIN_OBJECT_ID). If not provided, reads from the SQL Server.
-
 .PARAMETER FixIssues
     When set, automatically fixes any issues found. Without this flag,
     the script only reports.
 
 .EXAMPLE
+    .\Verify-SqlPermissions.ps1
     .\Verify-SqlPermissions.ps1 -FixIssues
     .\Verify-SqlPermissions.ps1 -Environment dev -InstanceNumber 123 -FixIssues
-    .\Verify-SqlPermissions.ps1 -ServicePrincipalAppId "aaaa-bbbb" -SqlAdminGroupId "cccc-dddd" -FixIssues
 #>
 
 [CmdletBinding()]
@@ -52,10 +48,6 @@ param(
 
     [string]$Prefix = 'ops-demo',
 
-    [string]$ServicePrincipalAppId,
-
-    [string]$SqlAdminGroupId,
-
     [switch]$FixIssues
 )
 
@@ -66,11 +58,11 @@ $ErrorActionPreference = 'Stop'
 
 function Write-Check {
     param([string]$Name, [bool]$Passed, [string]$Detail = '')
-    $icon = if ($Passed) { '[PASS]' } else { '[FAIL]' }
+    $icon  = if ($Passed) { '[PASS]' } else { '[FAIL]' }
     $color = if ($Passed) { 'Green' } else { 'Red' }
     Write-Host "$icon " -ForegroundColor $color -NoNewline
-    Write-Host "$Name" -NoNewline
-    if ($Detail) { Write-Host " - $Detail" } else { Write-Host '' }
+    Write-Host $Name -NoNewline
+    if ($Detail) { Write-Host " — $Detail" } else { Write-Host '' }
 }
 
 function Write-Action {
@@ -89,257 +81,218 @@ function Write-Section {
     param([string]$Title)
     Write-Host ''
     Write-Host "═══ $Title " -ForegroundColor White
-    Write-Host ('═' * 60) -ForegroundColor DarkGray
+    Write-Host ('═' * 70) -ForegroundColor DarkGray
 }
 
-# ── Derived Names ────────────────────────────────────────────────────────────
+# ── Counters ─────────────────────────────────────────────────────────────────
 
-$resourceGroup = "rg-$Environment-$InstanceNumber"
-$sqlServerName = "sql-$Prefix-$Environment-$InstanceNumber"
-$backendAppName = "app-$Prefix-api-$Environment-$InstanceNumber"
-$databaseName = 'programdb'
-
-$totalChecks = 0
+$totalChecks  = 0
 $passedChecks = 0
-$fixedChecks = 0
+$fixedChecks  = 0
 $failedChecks = 0
 
 function Add-CheckResult {
     param([bool]$Passed, [bool]$Fixed = $false)
     $script:totalChecks++
-    if ($Passed) { $script:passedChecks++ }
-    elseif ($Fixed) { $script:fixedChecks++ }
-    else { $script:failedChecks++ }
+    if ($Passed)    { $script:passedChecks++ }
+    elseif ($Fixed) { $script:fixedChecks++  }
+    else            { $script:failedChecks++ }
 }
+
+# ── Derived Names ────────────────────────────────────────────────────────────
+
+$resourceGroup      = "rg-$Environment-$InstanceNumber"
+$sqlServerName      = "sql-$Prefix-$Environment-$InstanceNumber"
+$backendAppName     = "app-$Prefix-api-$Environment-$InstanceNumber"
+$sqlAdminMiName     = "id-sql-admin-$Prefix-$Environment-$InstanceNumber"
+$databaseName       = 'programdb'
+$directoryReadersId = '88d8e3e3-8f55-4a1e-953a-9b9898b8876b'
 
 # ── Preflight ────────────────────────────────────────────────────────────────
 
 Write-Section 'Preflight'
 
-# Verify az CLI is logged in
 try {
     $account = az account show 2>&1 | ConvertFrom-Json
-    Write-Info "Logged in as: $($account.user.name) (type: $($account.user.type))"
-    Write-Info "Subscription: $($account.name) ($($account.id))"
+    Write-Info "Logged in as : $($account.user.name) ($($account.user.type))"
+    Write-Info "Subscription : $($account.name) ($($account.id))"
 } catch {
     Write-Error 'Not logged in to Azure CLI. Run: az login'
     exit 1
 }
 
-# If ServicePrincipalAppId not provided, try to derive from current login
-if (-not $ServicePrincipalAppId) {
-    if ($account.user.type -eq 'servicePrincipal') {
-        $ServicePrincipalAppId = $account.user.name
-        Write-Info "Using current service principal as target: $ServicePrincipalAppId"
-    } else {
-        Write-Info 'No -ServicePrincipalAppId provided and current login is not a service principal.'
-        Write-Info 'Will skip service principal group membership check.'
-    }
-}
+Write-Host @"
 
-# ── 1. SQL Server & AAD Admin Group ─────────────────────────────────────────
+  Architecture
+  ─────────────────────────────────────────────────────────────
+  SQL Admin MI : $sqlAdminMiName
+  SQL Server   : $sqlServerName
+  Database     : $databaseName
+  App Service  : $backendAppName
+  ─────────────────────────────────────────────────────────────
+  The App Service authenticates to SQL as the SQL admin MI.
+  No separate database user provisioning is needed.
 
-Write-Section '1. SQL Server AAD Admin Configuration'
+"@ -ForegroundColor Gray
 
-Write-Info "SQL Server: $sqlServerName (RG: $resourceGroup)"
+# ── 1. Managed Identity ──────────────────────────────────────────────────────
+
+Write-Section '1. SQL Admin Managed Identity'
+
+$miPrincipalId = $null
+$miClientId    = $null
+$miResourceId  = $null
 
 try {
-    $sqlServer = az sql server show `
-        --name $sqlServerName `
+    $mi = az identity show `
+        --name $sqlAdminMiName `
         --resource-group $resourceGroup `
         --only-show-errors 2>&1 | ConvertFrom-Json
 
-    Write-Check 'SQL Server exists' $true $sqlServerName
+    $miPrincipalId = $mi.principalId
+    $miClientId    = $mi.clientId
+    $miResourceId  = $mi.id
+
+    Write-Check "MI exists: $sqlAdminMiName" $true
+    Write-Info  "  principalId (Object ID) : $miPrincipalId"
+    Write-Info  "  clientId (App ID)       : $miClientId"
     Add-CheckResult $true
 } catch {
-    Write-Check 'SQL Server exists' $false "Cannot find $sqlServerName in $resourceGroup"
+    Write-Check "MI exists: $sqlAdminMiName" $false $_.Exception.Message
     Add-CheckResult $false
-    Write-Error "SQL Server $sqlServerName not found. Deploy infrastructure first."
+    Write-Error "Managed identity not found. Deploy infrastructure first: gh workflow run deploy-infra.yml"
     exit 1
 }
 
-# Get the AAD admin configuration
-$sqlAdmins = az sql server ad-admin list `
-    --server-name $sqlServerName `
-    --resource-group $resourceGroup `
-    --only-show-errors 2>&1 | ConvertFrom-Json
+# ── 2. SQL Server AAD Admin SID ──────────────────────────────────────────────
 
-if ($sqlAdmins -and $sqlAdmins.Count -gt 0) {
-    $adminEntry = $sqlAdmins[0]
-    $adminLogin = $adminEntry.login
-    $adminSid = $adminEntry.sid
-    $adminType = $adminEntry.administratorType
-
-    Write-Check 'AAD Admin configured' $true "$adminLogin ($adminType)"
-    Add-CheckResult $true
-
-    if (-not $SqlAdminGroupId) {
-        $SqlAdminGroupId = $adminSid
-        Write-Info "Using SQL AAD admin SID as group ID: $SqlAdminGroupId"
-    }
-} else {
-    Write-Check 'AAD Admin configured' $false 'No AAD admin set on SQL Server'
-    Add-CheckResult $false
-    Write-Error 'SQL Server has no AAD admin. Set one in sql.bicep and redeploy.'
-    exit 1
-}
-
-# Check AAD-only auth
-$aadOnly = $adminEntry.azureAdOnlyAuthentication
-if ($null -eq $aadOnly) { $aadOnly = $false }
-Write-Check 'AAD-only authentication enabled' ([bool]$aadOnly)
-Add-CheckResult ([bool]$aadOnly)
-
-# ── 2. Entra ID Group Validation ────────────────────────────────────────────
-
-Write-Section '2. Entra ID Admin Group'
-
-Write-Info "Admin Group Object ID: $SqlAdminGroupId"
+Write-Section '2. SQL Server AAD Admin Configuration'
 
 try {
-    $group = az ad group show --group $SqlAdminGroupId --only-show-errors 2>&1 | ConvertFrom-Json
-    Write-Check 'Admin group exists in Entra ID' $true $group.displayName
+    az sql server show `
+        --name $sqlServerName `
+        --resource-group $resourceGroup `
+        --only-show-errors 2>&1 | Out-Null
+    Write-Check "SQL Server exists: $sqlServerName" $true
     Add-CheckResult $true
 } catch {
-    Write-Check 'Admin group exists in Entra ID' $false "Group $SqlAdminGroupId not found"
+    Write-Check "SQL Server exists: $sqlServerName" $false $_.Exception.Message
     Add-CheckResult $false
-    Write-Error "The AAD admin group ($SqlAdminGroupId) does not exist in Entra ID."
+    Write-Error "SQL Server not found. Deploy infrastructure first."
     exit 1
 }
 
-# List group members for reference (use Graph API to include service principals)
-$membersRaw = az rest --method GET `
-    --url "https://graph.microsoft.com/v1.0/groups/$SqlAdminGroupId/members?`$select=id,displayName" `
-    --only-show-errors 2>&1
-$membersStr = ($membersRaw | Out-String).Trim()
-if ($membersStr -match 'ERROR') {
-    # Fallback to az ad group member list (may miss SPs)
-    $members = az ad group member list --group $SqlAdminGroupId --only-show-errors 2>&1 | ConvertFrom-Json
-} else {
-    $members = ($membersStr | ConvertFrom-Json).value
-}
+$adminSid    = $null
+$adminLogin  = $null
+$aadOnlyAuth = $false
 
-# Also fetch service principal members via OData type cast (the /members endpoint
-# may not return SPs depending on caller permissions)
-$spMembersRaw = az rest --method GET `
-    --url "https://graph.microsoft.com/v1.0/groups/$SqlAdminGroupId/members/microsoft.graph.servicePrincipal?`$select=id,displayName,appId,servicePrincipalType" `
-    --only-show-errors 2>&1
-$spMembersStr = ($spMembersRaw | Out-String).Trim()
-$spGroupMembers = @()
-if ($spMembersStr -notmatch 'ERROR') {
-    $spMembersParsed = ($spMembersStr | ConvertFrom-Json).value
-    if ($spMembersParsed) {
-        $spGroupMembers = @($spMembersParsed)
-        # Merge SP members into the main members list (avoid duplicates)
-        $existingIds = @($members | ForEach-Object { $_.id })
-        foreach ($sp in $spGroupMembers) {
-            if ($existingIds -notcontains $sp.id) {
-                $members += $sp
-            }
-        }
-    }
-}
+try {
+    $sqlAdmins = az sql server ad-admin list `
+        --server-name $sqlServerName `
+        --resource-group $resourceGroup `
+        --only-show-errors 2>&1 | ConvertFrom-Json
 
-Write-Info "Group members ($($members.Count)):"
-foreach ($m in $members) {
-    $hasSPType = ($m.PSObject.Properties.Name -contains 'servicePrincipalType')
-    $hasODataType = ($m.PSObject.Properties.Name -contains '@odata.type')
-    $odataType = if ($hasODataType) { $m.'@odata.type' } else { '' }
-    $mType = if ($odataType -match 'servicePrincipal' -or ($hasSPType -and $m.servicePrincipalType)) { 'SP' }
-             elseif ($odataType -match 'user') { 'User' }
-             elseif ($odataType -match 'group') { 'Group' }
-             elseif ($hasSPType) { 'SP' }
-             else { 'Unknown' }
-    Write-Info "  - [$mType] $($m.displayName) ($($m.id))"
-}
+    if ($sqlAdmins -and $sqlAdmins.Count -gt 0) {
+        $adminEntry  = $sqlAdmins[0]
+        $adminLogin  = $adminEntry.login
+        $adminSid    = $adminEntry.sid
+        $aadOnlyAuth = [bool]$adminEntry.azureAdOnlyAuthentication
 
-# ── 3. Service Principal Group Membership ────────────────────────────────────
-
-Write-Section '3. Service Principal Group Membership'
-
-$spObjectId = $null
-$spDisplayName = ''
-
-if ($ServicePrincipalAppId) {
-    # Resolve the SP's object ID from its app (client) ID
-    try {
-        $spObjects = az ad sp list --filter "appId eq '$ServicePrincipalAppId'" --only-show-errors 2>&1 | ConvertFrom-Json
-        if ($spObjects -and $spObjects.Count -gt 0) {
-            $spObjectId = $spObjects[0].id
-            $spDisplayName = $spObjects[0].displayName
-            Write-Check 'Service principal found' $true "$spDisplayName (Object ID: $spObjectId)"
-            Add-CheckResult $true
-        } else {
-            Write-Check 'Service principal found' $false "No SP with appId=$ServicePrincipalAppId"
-            Add-CheckResult $false
-            $spObjectId = $null
-        }
-    } catch {
-        Write-Check 'Service principal found' $false $_.Exception.Message
+        Write-Check 'AAD admin is configured' $true $adminLogin
+        Write-Info  "  sid in SQL : $adminSid"
+        Write-Info  "  Expected   : $miPrincipalId  (MI principalId / Object ID)"
+        Add-CheckResult $true
+    } else {
+        Write-Check 'AAD admin is configured' $false 'No AAD admin set on SQL Server'
         Add-CheckResult $false
-        $spObjectId = $null
+        Write-Host ''
+        Write-Host 'Fix: redeploy infrastructure — sql.bicep sets the AAD admin block.' -ForegroundColor Yellow
+        exit 1
     }
-
-    if ($spObjectId) {
-        $isMember = az ad group member check `
-            --group $SqlAdminGroupId `
-            --member-id $spObjectId `
-            --only-show-errors 2>&1 | ConvertFrom-Json
-
-        if ($isMember.value -eq $true) {
-            Write-Check 'SP is member of SQL admin group' $true
-            Add-CheckResult $true
-        } else {
-            Write-Check 'SP is member of SQL admin group' $false "Not a member of $($group.displayName)"
-            if ($FixIssues) {
-                Write-Action "Adding SP $spDisplayName to group $($group.displayName)..."
-                az ad group member add `
-                    --group $SqlAdminGroupId `
-                    --member-id $spObjectId `
-                    --only-show-errors 2>&1 | Out-Null
-                Write-Check 'SP added to SQL admin group' $true '(fixed)'
-                Add-CheckResult $false $true
-            } else {
-                Write-Info "Run with -FixIssues to add automatically, or manually:"
-                Write-Info "  az ad group member add --group $SqlAdminGroupId --member-id $spObjectId"
-                Add-CheckResult $false
-            }
-        }
-    }
-} else {
-    Write-Info 'Skipped: No service principal specified (-ServicePrincipalAppId).'
+} catch {
+    Write-Check 'Read SQL AAD admin' $false $_.Exception.Message
+    Add-CheckResult $false
+    exit 1
 }
 
-# ── 4. Directory Readers Role ────────────────────────────────────────────────
+# KEY CHECK: sid must equal the MI principalId (Object ID).
+# SQL Server stores the sid set at creation time and compares it against the
+# oid claim in the incoming AAD token.  A common bug is setting sid to the
+# clientId (Application ID) instead — both are GUIDs so it looks plausible
+# but authentication always fails with "SQL Server did not return a response".
+if ($adminSid -eq $miPrincipalId) {
+    Write-Check 'Admin sid == MI principalId' $true $miPrincipalId
+    Add-CheckResult $true
+} else {
+    Write-Check 'Admin sid == MI principalId' $false `
+        "sid=$adminSid  ≠  principalId=$miPrincipalId"
+    Write-Info '  Root cause of FedAuth failure:'
+    Write-Info '  SQL Server validates the token oid claim against the stored sid.'
+    Write-Info '  Using clientId as sid causes auth to fail at the FedAuth handshake.'
+    if ($FixIssues) {
+        Write-Action "Updating SQL AAD admin sid to principalId=$miPrincipalId ..."
+        az sql server ad-admin update `
+            --server-name $sqlServerName `
+            --resource-group $resourceGroup `
+            --object-id $miPrincipalId `
+            --display-name $sqlAdminMiName `
+            --only-show-errors 2>&1 | Out-Null
+        Write-Check 'Admin sid updated to principalId' $true '(fixed)'
+        Add-CheckResult $false $true
 
-Write-Section '4. Directory Readers Role'
+        Write-Info ''
+        Write-Info 'Restarting App Service to re-establish connections with corrected SID...'
+        az webapp restart `
+            --name $backendAppName `
+            --resource-group $resourceGroup `
+            --only-show-errors 2>&1 | Out-Null
+        Write-Check "App Service restarted: $backendAppName" $true
+    } else {
+        Write-Info ''
+        Write-Info 'Run with -FixIssues to correct immediately (no redeploy needed):'
+        Write-Info "  .\Verify-SqlPermissions.ps1 -FixIssues"
+        Write-Info ''
+        Write-Info 'Or correct manually:'
+        Write-Info "  az sql server ad-admin update --server-name $sqlServerName --resource-group $resourceGroup --object-id $miPrincipalId --display-name $sqlAdminMiName"
+        Write-Info "  az webapp restart --name $backendAppName --resource-group $resourceGroup"
+        Add-CheckResult $false
+    }
+}
 
-Write-Info 'Required to resolve managed identity names during CREATE USER FROM EXTERNAL PROVIDER.'
+# AAD-only authentication
+Write-Check 'AAD-only authentication enabled' $aadOnlyAuth
+Add-CheckResult $aadOnlyAuth
+if (-not $aadOnlyAuth) {
+    Write-Info '  Password-based logins should be disabled. This is enforced in sql.bicep.'
+}
 
-$directoryReadersRoleId = '88d8e3e3-8f55-4a1e-953a-9b9898b8876b'
+# ── 3. Directory Readers Role ────────────────────────────────────────────────
 
-# Helper: check if a principal has Directory Readers
+Write-Section '3. Directory Readers Role on SQL Admin MI'
+
+Write-Info 'Required: SQL Server resolves MI names via Entra ID during authentication.'
+Write-Info "Checking MI: $sqlAdminMiName (principalId: $miPrincipalId)"
+
 function Test-DirectoryReadersRole {
     param([string]$PrincipalId)
     try {
-        $filterParam = "roleDefinitionId eq '$directoryReadersRoleId' and principalId eq '$PrincipalId'"
-        $graphUrl = "https://graph.microsoft.com/v1.0/roleManagement/directory/roleAssignments?`$filter=$filterParam"
-        $raw = az rest --method GET --url $graphUrl --only-show-errors 2>&1
-        $rawStr = ($raw | Out-String).Trim()
+        $filterParam = "roleDefinitionId eq '$directoryReadersId' and principalId eq '$PrincipalId'"
+        $graphUrl    = "https://graph.microsoft.com/v1.0/roleManagement/directory/roleAssignments?`$filter=$filterParam"
+        $raw         = az rest --method GET --url $graphUrl --only-show-errors 2>&1
+        $rawStr      = ($raw | Out-String).Trim()
         if ($rawStr -match 'ERROR') { return $null }
-        $parsed = $rawStr | ConvertFrom-Json
+        $parsed      = $rawStr | ConvertFrom-Json
         return ($parsed.value -and $parsed.value.Count -gt 0)
     } catch {
         return $null
     }
 }
 
-# Helper: assign Directory Readers to a principal via temp file (avoids JSON escaping issues)
 function Grant-DirectoryReadersRole {
     param([string]$PrincipalId)
     $body = @{
         '@odata.type'    = '#microsoft.graph.unifiedRoleAssignment'
-        roleDefinitionId = $directoryReadersRoleId
+        roleDefinitionId = $directoryReadersId
         principalId      = $PrincipalId
         directoryScopeId = '/'
     } | ConvertTo-Json -Compress
@@ -353,402 +306,206 @@ function Grant-DirectoryReadersRole {
             --body "@$tempFile" `
             --only-show-errors 2>&1
         $resultStr = ($result | Out-String).Trim()
-        if ($resultStr -match 'ERROR') {
-            return $resultStr
-        }
-        return $null  # success
+        return if ($resultStr -match 'ERROR') { $resultStr } else { $null }
     } finally {
         Remove-Item $tempFile -ErrorAction SilentlyContinue
     }
 }
 
-# Check if the admin group itself is role-assignable
-$isGroupRoleAssignable = $false
-try {
-    $groupDetail = az rest --method GET `
-        --url "https://graph.microsoft.com/v1.0/groups/$SqlAdminGroupId?`$select=displayName,isAssignableToRole" `
-        --only-show-errors 2>&1
-    $groupDetailStr = ($groupDetail | Out-String).Trim()
-    if ($groupDetailStr -notmatch 'ERROR') {
-        $groupProps = $groupDetailStr | ConvertFrom-Json
-        $isGroupRoleAssignable = [bool]$groupProps.isAssignableToRole
-    }
-} catch { }
+$hasDirectoryReaders = Test-DirectoryReadersRole -PrincipalId $miPrincipalId
 
-Write-Info "Admin group isAssignableToRole: $isGroupRoleAssignable"
-
-if ($isGroupRoleAssignable) {
-    # The group can hold directory roles — check/assign at group level
-    $hasRole = Test-DirectoryReadersRole -PrincipalId $SqlAdminGroupId
-    if ($hasRole -eq $true) {
-        Write-Check 'Admin group has Directory Readers role' $true
-        Add-CheckResult $true
-    } elseif ($hasRole -eq $false) {
-        Write-Check 'Admin group has Directory Readers role' $false
-        if ($FixIssues) {
-            Write-Action "Assigning Directory Readers to group $($group.displayName)..."
-            $err = Grant-DirectoryReadersRole -PrincipalId $SqlAdminGroupId
-            if (-not $err) {
-                Write-Check 'Directory Readers role assigned to group' $true '(fixed)'
-                Add-CheckResult $false $true
-            } else {
-                Write-Check 'Directory Readers role assignment' $false $err
-                Add-CheckResult $false
-            }
+if ($hasDirectoryReaders -eq $true) {
+    Write-Check 'SQL admin MI has Directory Readers role' $true
+    Add-CheckResult $true
+} elseif ($hasDirectoryReaders -eq $false) {
+    Write-Check 'SQL admin MI has Directory Readers role' $false 'Missing'
+    if ($FixIssues) {
+        Write-Action "Assigning Directory Readers to $sqlAdminMiName ..."
+        $err = Grant-DirectoryReadersRole -PrincipalId $miPrincipalId
+        if (-not $err) {
+            Write-Check 'Directory Readers role assigned' $true '(fixed)'
+            Add-CheckResult $false $true
         } else {
-            Write-Info 'Run with -FixIssues to assign automatically.'
+            Write-Check 'Directory Readers role assignment' $false $err
             Add-CheckResult $false
         }
     } else {
-        Write-Check 'Directory Readers role check (group)' $false 'Graph API error'
+        Write-Info 'Run with -FixIssues to assign automatically.'
+        Write-Info "Or assign manually in Entra ID > Roles > Directory Readers > Assignments."
         Add-CheckResult $false
     }
 } else {
-    # Group is NOT role-assignable — must assign Directory Readers to each member individually
-    Write-Info "Group is not role-assignable (isAssignableToRole=false). Cannot assign directory roles to the group."
-    Write-Info "Checking Directory Readers on each group member individually..."
-
-    $allMembersOk = $true
-    foreach ($m in $members) {
-        $mName = $m.displayName
-        $mId = $m.id
-        $hasRole = Test-DirectoryReadersRole -PrincipalId $mId
-
-        if ($hasRole -eq $true) {
-            Write-Check "  Directory Readers: $mName" $true
-            Add-CheckResult $true
-        } elseif ($hasRole -eq $false) {
-            Write-Check "  Directory Readers: $mName" $false 'Missing'
-            $allMembersOk = $false
-            if ($FixIssues) {
-                Write-Action "Assigning Directory Readers to $mName ($mId)..."
-                $err = Grant-DirectoryReadersRole -PrincipalId $mId
-                if (-not $err) {
-                    Write-Check "  Directory Readers: $mName" $true '(fixed)'
-                    Add-CheckResult $false $true
-                } else {
-                    Write-Check "  Directory Readers assignment: $mName" $false $err
-                    Add-CheckResult $false
-                }
-            } else {
-                Write-Info "  Run with -FixIssues to assign automatically."
-                Add-CheckResult $false
-            }
-        } else {
-            Write-Check "  Directory Readers: $mName" $false 'Graph API error'
-            Add-CheckResult $false
-            $allMembersOk = $false
-        }
-    }
-
-    # Also check the SQL Server's own identity if it has one
-    Write-Info 'Checking SQL Server system-assigned identity...'
-    try {
-        $sqlIdentity = az sql server show `
-            --name $sqlServerName `
-            --resource-group $resourceGroup `
-            --query 'identity.principalId' -o tsv `
-            --only-show-errors 2>&1
-        $sqlIdentityStr = ($sqlIdentity | Out-String).Trim()
-
-        if ($sqlIdentityStr -and $sqlIdentityStr -ne 'None' -and $sqlIdentityStr -notmatch 'ERROR') {
-            Write-Info "SQL Server identity principal: $sqlIdentityStr"
-            $hasRole = Test-DirectoryReadersRole -PrincipalId $sqlIdentityStr
-            if ($hasRole -eq $true) {
-                Write-Check '  Directory Readers: SQL Server identity' $true
-                Add-CheckResult $true
-            } elseif ($hasRole -eq $false) {
-                Write-Check '  Directory Readers: SQL Server identity' $false 'Missing'
-                if ($FixIssues) {
-                    Write-Action "Assigning Directory Readers to SQL Server identity..."
-                    $err = Grant-DirectoryReadersRole -PrincipalId $sqlIdentityStr
-                    if (-not $err) {
-                        Write-Check '  Directory Readers: SQL Server identity' $true '(fixed)'
-                        Add-CheckResult $false $true
-                    } else {
-                        Write-Check '  Directory Readers assignment: SQL Server' $false $err
-                        Add-CheckResult $false
-                    }
-                } else {
-                    Write-Info '  Run with -FixIssues to assign automatically.'
-                    Add-CheckResult $false
-                }
-            } else {
-                Write-Check '  Directory Readers: SQL Server identity' $false 'Graph API error'
-                Add-CheckResult $false
-            }
-        } else {
-            Write-Info 'SQL Server has no system-assigned identity. Using AAD admin group for identity resolution.'
-        }
-    } catch {
-        Write-Info "Could not check SQL Server identity: $($_.Exception.Message)"
-    }
-
-    if (-not $allMembersOk -and -not $FixIssues) {
-        Write-Info ''
-        Write-Info 'Alternative: Recreate the admin group with isAssignableToRole=true to assign at group level.'
-        Write-Info '  az ad group create --display-name "azureSqlDBAdmins" --mail-nickname "azureSqlDBAdmins" --is-assignable-to-role true'
-    }
-
-    # Also check Directory Readers for service principals that may not be group members
-    # but still need the role (e.g., the backend managed identity used in CREATE USER)
-    Write-Info ''
-    Write-Info 'Checking Directory Readers for service principals related to this deployment...'
-
-    # Build a list of SPs to check: GH Actions SP + backend MI (if known)
-    $spPrincipals = @()
-
-    if ($spObjectId) {
-        $spPrincipals += @{ Name = "GH Actions SP ($spDisplayName)"; Id = $spObjectId }
-    }
-
-    # Resolve backend managed identity SP object ID
-    try {
-        $backendMiObjects = az ad sp list --filter "displayName eq '$backendAppName'" --only-show-errors 2>&1 | ConvertFrom-Json
-        if ($backendMiObjects -and $backendMiObjects.Count -gt 0) {
-            $backendMiObjectId = $backendMiObjects[0].id
-            $spPrincipals += @{ Name = "Backend MI ($backendAppName)"; Id = $backendMiObjectId }
-        }
-    } catch { }
-
-    # Deduplicate against already-checked group members
-    $checkedIds = @($members | ForEach-Object { $_.id })
-
-    foreach ($sp in $spPrincipals) {
-        if ($checkedIds -contains $sp.Id) {
-            Write-Info "  $($sp.Name) already checked as group member — skipping."
-            continue
-        }
-        $hasRole = Test-DirectoryReadersRole -PrincipalId $sp.Id
-
-        if ($hasRole -eq $true) {
-            Write-Check "  Directory Readers: $($sp.Name)" $true
-            Add-CheckResult $true
-        } elseif ($hasRole -eq $false) {
-            Write-Check "  Directory Readers: $($sp.Name)" $false 'Missing'
-            $allMembersOk = $false
-            if ($FixIssues) {
-                Write-Action "Assigning Directory Readers to $($sp.Name) ($($sp.Id))..."
-                $err = Grant-DirectoryReadersRole -PrincipalId $sp.Id
-                if (-not $err) {
-                    Write-Check "  Directory Readers: $($sp.Name)" $true '(fixed)'
-                    Add-CheckResult $false $true
-                } else {
-                    Write-Check "  Directory Readers assignment: $($sp.Name)" $false $err
-                    Add-CheckResult $false
-                }
-            } else {
-                Write-Info "  Run with -FixIssues to assign automatically."
-                Add-CheckResult $false
-            }
-        } else {
-            Write-Check "  Directory Readers: $($sp.Name)" $false 'Graph API error'
-            Add-CheckResult $false
-            $allMembersOk = $false
-        }
-    }
+    Write-Check 'Directory Readers role check' $false 'Graph API error — check permissions'
+    Write-Info '  Your account may lack permission to read role assignments.'
+    Write-Info '  Verify manually: Entra ID > Roles and administrators > Directory Readers.'
+    Add-CheckResult $false
 }
 
-# ── 5. Backend Managed Identity ──────────────────────────────────────────────
+# ── 4. App Service Identity ──────────────────────────────────────────────────
 
-Write-Section '5. Backend App Service Managed Identity'
+Write-Section '4. Backend App Service — User-Assigned MI'
 
-Write-Info "App Service: $backendAppName"
+Write-Info "App Service : $backendAppName"
+Write-Info "Expected MI : $sqlAdminMiName  ($miPrincipalId)"
 
 try {
-    $webApp = az webapp identity show `
+    $identityJson = az webapp show `
         --name $backendAppName `
         --resource-group $resourceGroup `
+        --query 'identity' `
         --only-show-errors 2>&1 | ConvertFrom-Json
 
-    if ($webApp.principalId) {
-        Write-Check 'System-assigned managed identity enabled' $true "Principal: $($webApp.principalId)"
-        Add-CheckResult $true
-        $backendPrincipalId = $webApp.principalId
-    } else {
-        Write-Check 'System-assigned managed identity enabled' $false
+    $identityType = $identityJson.type
+    Write-Info "Identity type : $identityType"
+
+    # Check the specific user-assigned MI is attached
+    $uamiAttached = $false
+    if ($identityJson.userAssignedIdentities) {
+        $count = $identityJson.userAssignedIdentities.PSObject.Properties |
+            Where-Object { $_.Value.principalId -eq $miPrincipalId } |
+            Measure-Object | Select-Object -ExpandProperty Count
+        $uamiAttached = ($count -gt 0)
+    }
+
+    Write-Check "User-assigned MI attached: $sqlAdminMiName" $uamiAttached
+    Add-CheckResult $uamiAttached
+
+    if (-not $uamiAttached) {
         if ($FixIssues) {
-            Write-Action 'Enabling system-assigned managed identity...'
-            $result = az webapp identity assign `
+            Write-Action "Attaching MI $sqlAdminMiName to $backendAppName ..."
+            az webapp identity assign `
                 --name $backendAppName `
                 --resource-group $resourceGroup `
-                --only-show-errors 2>&1 | ConvertFrom-Json
-            $backendPrincipalId = $result.principalId
-            Write-Check 'Managed identity enabled' $true "(fixed) Principal: $backendPrincipalId"
+                --identities $miResourceId `
+                --only-show-errors 2>&1 | Out-Null
+            Write-Check 'User-assigned MI attached' $true '(fixed — restart the app to take effect)'
             Add-CheckResult $false $true
+
+            Write-Action "Restarting App Service ..."
+            az webapp restart `
+                --name $backendAppName `
+                --resource-group $resourceGroup `
+                --only-show-errors 2>&1 | Out-Null
+            Write-Check "App Service restarted: $backendAppName" $true
         } else {
-            Write-Info 'Run with -FixIssues to enable, or redeploy via deploy-infra workflow.'
+            Write-Info 'Run with -FixIssues to attach the MI, or redeploy via deploy-infra workflow.'
             Add-CheckResult $false
-            $backendPrincipalId = $null
         }
     }
-} catch {
-    Write-Check 'Backend App Service reachable' $false $_.Exception.Message
-    Add-CheckResult $false
-    $backendPrincipalId = $null
-}
 
-# ── 6. SQL Database User & Roles ─────────────────────────────────────────────
+    # Verify SPRING_DATASOURCE_URL contains msiClientId
+    $dsUrl = az webapp config appsettings list `
+        --name $backendAppName `
+        --resource-group $resourceGroup `
+        --only-show-errors 2>&1 | ConvertFrom-Json |
+        Where-Object { $_.name -eq 'SPRING_DATASOURCE_URL' } |
+        Select-Object -ExpandProperty value
 
-Write-Section '6. SQL Database User and Roles'
+    if ($dsUrl) {
+        Write-Info "SPRING_DATASOURCE_URL: $dsUrl"
+        $hasMsiClientId = $dsUrl -match 'msiClientId='
+        Write-Check 'JDBC URL contains msiClientId' $hasMsiClientId
+        Add-CheckResult $hasMsiClientId
 
-Write-Info "Database: $sqlServerName.database.windows.net / $databaseName"
-Write-Info "Expected SQL user: [$backendAppName]"
-
-try {
-    # Get an access token for Azure SQL
-    $token = az account get-access-token `
-        --resource 'https://database.windows.net/' `
-        --query 'accessToken' -o tsv 2>&1
-
-    if (-not $token -or $token -match 'ERROR') {
-        throw "Failed to get SQL access token: $token"
-    }
-
-    # Check if user exists and what roles they have
-    $query = @"
-SELECT
-    dp.name AS [UserName],
-    dp.type_desc AS [UserType],
-    STRING_AGG(r.name, ', ') AS [Roles]
-FROM sys.database_principals dp
-LEFT JOIN sys.database_role_members drm ON dp.principal_id = drm.member_principal_id
-LEFT JOIN sys.database_principals r ON drm.role_principal_id = r.principal_id
-WHERE dp.name = '$backendAppName'
-GROUP BY dp.name, dp.type_desc;
-"@
-
-    $result = Invoke-Sqlcmd `
-        -ServerInstance "$sqlServerName.database.windows.net" `
-        -Database $databaseName `
-        -AccessToken $token `
-        -Query $query `
-        -ErrorAction Stop
-
-    if ($result) {
-        Write-Check "SQL user [$backendAppName] exists" $true "Type: $($result.UserType)"
-        Add-CheckResult $true
-
-        $currentRoles = if ($result.Roles) { $result.Roles -split ', ' } else { @() }
-        $requiredRoles = @('db_datareader', 'db_datawriter', 'db_ddladmin')
-        $missingRoles = @()
-
-        foreach ($role in $requiredRoles) {
-            if ($currentRoles -contains $role) {
-                Write-Check "  Role: $role" $true
-                Add-CheckResult $true
-            } else {
-                Write-Check "  Role: $role" $false 'Missing'
-                $missingRoles += $role
+        if ($hasMsiClientId) {
+            $urlHasCorrectClientId = $dsUrl -match [regex]::Escape($miClientId)
+            Write-Check "msiClientId == MI clientId ($miClientId)" $urlHasCorrectClientId
+            Add-CheckResult $urlHasCorrectClientId
+            if (-not $urlHasCorrectClientId) {
+                Write-Info '  The msiClientId in the JDBC URL does not match the MI clientId.'
+                Write-Info '  Redeploy via deploy-infra workflow to update the App Setting.'
             }
-        }
-
-        if ($missingRoles.Count -gt 0 -and $FixIssues) {
-            foreach ($role in $missingRoles) {
-                Write-Action "Granting $role to [$backendAppName]..."
-                Invoke-Sqlcmd `
-                    -ServerInstance "$sqlServerName.database.windows.net" `
-                    -Database $databaseName `
-                    -AccessToken $token `
-                    -Query "ALTER ROLE $role ADD MEMBER [$backendAppName];" `
-                    -ErrorAction Stop
-                Write-Check "  Role: $role" $true '(fixed)'
-                Add-CheckResult $false $true
-            }
-        } elseif ($missingRoles.Count -gt 0) {
-            Write-Info "Run with -FixIssues to grant missing roles automatically."
-            foreach ($role in $missingRoles) { Add-CheckResult $false }
+        } else {
+            Write-Info '  msiClientId not in JDBC URL. Without it the MSSQL driver uses the'
+            Write-Info '  system-assigned MI (if any) instead of the user-assigned admin MI.'
+            Write-Info '  Redeploy via deploy-infra workflow to update the App Setting.'
+            Add-CheckResult $false
         }
     } else {
-        Write-Check "SQL user [$backendAppName] exists" $false 'User not found in database'
-
-        if ($FixIssues) {
-            Write-Action "Creating SQL user [$backendAppName] from external provider..."
-            Invoke-Sqlcmd `
-                -ServerInstance "$sqlServerName.database.windows.net" `
-                -Database $databaseName `
-                -AccessToken $token `
-                -Query "CREATE USER [$backendAppName] FROM EXTERNAL PROVIDER;" `
-                -ErrorAction Stop
-            Write-Check "SQL user [$backendAppName] created" $true '(fixed)'
-            Add-CheckResult $false $true
-
-            foreach ($role in @('db_datareader', 'db_datawriter', 'db_ddladmin')) {
-                Write-Action "Granting $role to [$backendAppName]..."
-                Invoke-Sqlcmd `
-                    -ServerInstance "$sqlServerName.database.windows.net" `
-                    -Database $databaseName `
-                    -AccessToken $token `
-                    -Query "ALTER ROLE $role ADD MEMBER [$backendAppName];" `
-                    -ErrorAction Stop
-                Write-Check "  Role: $role" $true '(fixed)'
-                Add-CheckResult $false $true
-            }
-        } else {
-            Write-Info "Run with -FixIssues to create user and grant roles."
-            Add-CheckResult $false
-        }
+        Write-Check 'SPRING_DATASOURCE_URL App Setting found' $false
+        Add-CheckResult $false
     }
+
 } catch {
-    Write-Check 'SQL Database connection' $false $_.Exception.Message
-    Write-Info 'Possible causes:'
-    Write-Info '  - Firewall rule missing for your IP'
-    Write-Info '  - Access token expired or insufficient permissions'
-    Write-Info '  - SqlServer PowerShell module not installed (Install-Module SqlServer)'
+    Write-Check "App Service reachable: $backendAppName" $false $_.Exception.Message
     Add-CheckResult $false
 }
 
-# ── 7. SQL Server Firewall ───────────────────────────────────────────────────
+# ── 5. SQL Connectivity Smoke Test ───────────────────────────────────────────
 
-Write-Section '7. SQL Server Firewall Rules'
+Write-Section '5. SQL Connectivity Smoke Test'
 
-$firewallRules = az sql server firewall-rule list `
-    --server $sqlServerName `
-    --resource-group $resourceGroup `
-    --only-show-errors 2>&1 | ConvertFrom-Json
+Write-Info 'Uses the current Azure CLI identity (your own account, not the MI).'
+Write-Info "SQL: $sqlServerName.database.windows.net / $databaseName"
+Write-Info 'NOTE: SQL is private-endpoint-only. This test succeeds only when run'
+Write-Info 'from inside the VNet or a machine with a route to the private endpoint.'
+Write-Host ''
 
-if ($firewallRules) {
-    foreach ($rule in $firewallRules) {
-        $range = if ($rule.startIpAddress -eq $rule.endIpAddress) {
-            $rule.startIpAddress
-        } else {
-            "$($rule.startIpAddress) - $($rule.endIpAddress)"
-        }
-        Write-Check "Firewall: $($rule.name)" $true $range
-    }
+$sqlModuleAvailable = $null -ne (Get-Module -ListAvailable -Name SqlServer -ErrorAction SilentlyContinue)
 
-    $hasAzureRule = $firewallRules | Where-Object {
-        $_.startIpAddress -eq '0.0.0.0' -and $_.endIpAddress -eq '0.0.0.0'
-    }
-    Write-Check 'Allow Azure Services rule' ([bool]$hasAzureRule)
-    Add-CheckResult ([bool]$hasAzureRule)
+if (-not $sqlModuleAvailable) {
+    Write-Info 'SqlServer PowerShell module not installed — skipping connectivity test.'
+    Write-Info 'To install: Install-Module SqlServer -Scope CurrentUser'
 } else {
-    Write-Check 'Firewall rules exist' $false 'No rules found'
-    Add-CheckResult $false
+    try {
+        $token = az account get-access-token `
+            --resource 'https://database.windows.net/' `
+            --query 'accessToken' -o tsv 2>&1
+
+        if (-not $token -or $token -match 'ERROR') {
+            throw "Could not obtain SQL access token: $token"
+        }
+
+        $result = Invoke-Sqlcmd `
+            -ServerInstance "$sqlServerName.database.windows.net" `
+            -Database $databaseName `
+            -AccessToken $token `
+            -Query 'SELECT SYSTEM_USER AS [Identity], USER_NAME() AS [DbUser];' `
+            -ErrorAction Stop `
+            -TrustServerCertificate
+
+        Write-Check 'SQL connectivity (as current user)' $true
+        Write-Info  "  SQL identity : $($result.Identity)"
+        Write-Info  "  DB user      : $($result.DbUser)"
+        Add-CheckResult $true
+    } catch {
+        $msg = $_.Exception.Message
+        if ($msg -match 'No such host|connection|network|timeout|A network-related') {
+            Write-Check 'SQL connectivity' $false 'Network unreachable (expected from outside VNet)'
+        } else {
+            Write-Check 'SQL connectivity' $false $msg
+        }
+        Add-CheckResult $false
+    }
 }
 
 # ── Summary ──────────────────────────────────────────────────────────────────
 
 Write-Section 'Summary'
 
-Write-Host "Total checks:  $totalChecks"
-Write-Host "Passed:        $passedChecks" -ForegroundColor Green
+Write-Host "  Total checks : $totalChecks"
+Write-Host "  Passed       : $passedChecks" -ForegroundColor Green
 if ($fixedChecks -gt 0) {
-    Write-Host "Fixed:         $fixedChecks" -ForegroundColor Yellow
+    Write-Host "  Fixed        : $fixedChecks" -ForegroundColor Yellow
 }
 if ($failedChecks -gt 0) {
-    Write-Host "Failed:        $failedChecks" -ForegroundColor Red
-    if (-not $FixIssues) {
-        Write-Host ''
-        Write-Host 'Run with -FixIssues to automatically fix issues where possible.' -ForegroundColor Yellow
-    }
+    Write-Host "  Failed       : $failedChecks" -ForegroundColor Red
 }
 
 Write-Host ''
-if ($failedChecks -eq 0) {
-    Write-Host 'All permissions are correctly configured.' -ForegroundColor Green
+
+if ($failedChecks -eq 0 -and $fixedChecks -eq 0) {
+    Write-Host 'All checks passed. Configuration is correct.' -ForegroundColor Green
+    exit 0
+} elseif ($failedChecks -eq 0) {
+    Write-Host "Fixed $fixedChecks issue(s). Monitor the App Service for recovery." -ForegroundColor Yellow
     exit 0
 } else {
-    Write-Host 'Some checks failed. Review the output above.' -ForegroundColor Red
+    if (-not $FixIssues) {
+        Write-Host "$failedChecks check(s) failed. Run with -FixIssues to fix automatically:" -ForegroundColor Red
+        Write-Host "  .\Verify-SqlPermissions.ps1 -FixIssues" -ForegroundColor Yellow
+    } else {
+        Write-Host "$failedChecks check(s) could not be fixed automatically. Review output above." -ForegroundColor Red
+    }
     exit 1
 }

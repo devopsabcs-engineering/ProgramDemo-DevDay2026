@@ -21,10 +21,10 @@ resource sqlAdminIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023
 @description('The resource ID of the managed identity.')
 output id string = sqlAdminIdentity.id
 
-@description('The client (application) ID of the managed identity. Used as the SQL AAD administrator sid.')
+@description('The client (application) ID of the managed identity. Used as msiClientId in the JDBC connection string.')
 output clientId string = sqlAdminIdentity.properties.clientId
 
-@description('The principal (object) ID of the managed identity. Used for RBAC role assignments.')
+@description('The principal (object) ID of the managed identity. Used as the SQL AAD administrator sid and for RBAC role assignments.')
 output principalId string = sqlAdminIdentity.properties.principalId
 
 @description('The name of the managed identity.')

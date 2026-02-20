@@ -120,7 +120,11 @@ module sqlServer './modules/sql.bicep' = {
     privateEndpointSubnetId: vnet.outputs.privateEndpointSubnetId
     vnetId: vnet.outputs.vnetId
     adminIdentityName: sqlAdminIdentity.outputs.name
-    adminIdentityClientId: sqlAdminIdentity.outputs.clientId
+    // sid in the SQL AAD admin block must be the Object ID (principalId).
+    // SQL Server verifies it against the oid claim in the incoming token.
+    adminIdentityPrincipalId: sqlAdminIdentity.outputs.principalId
+    // msiClientId in the JDBC URL must be the Application/Client ID so the
+    // MSSQL driver requests a token scoped to the correct user-assigned MI.
     appMsiClientId: sqlAdminIdentity.outputs.clientId
   }
 }

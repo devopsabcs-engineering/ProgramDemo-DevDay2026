@@ -23,8 +23,8 @@ param vnetId string
 @description('Name of the user-assigned managed identity acting as the SQL AAD administrator.')
 param adminIdentityName string
 
-@description('Client ID of the user-assigned managed identity acting as the SQL AAD administrator. For Application principals the sid field must be the client ID, not the object ID.')
-param adminIdentityClientId string
+@description('Principal (Object) ID of the user-assigned managed identity acting as the SQL AAD administrator. SQL Server stores this as the admin sid and compares it against the oid claim in the incoming AAD token. Must be principalId, NOT clientId.')
+param adminIdentityPrincipalId string
 
 @description('Client ID of the user-assigned managed identity that the App Service uses to authenticate to SQL. Embedded in the JDBC connection string as msiClientId.')
 param appMsiClientId string
@@ -47,7 +47,7 @@ resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' = {
       // deployment scripts in the VNet can authenticate and provision DB users.
       // Human DBA access should be added separately (e.g., via db_owner role).
       login: adminIdentityName
-      sid: adminIdentityClientId
+      sid: adminIdentityPrincipalId
       tenantId: tenant().tenantId
       azureADOnlyAuthentication: true
       principalType: 'Application'
