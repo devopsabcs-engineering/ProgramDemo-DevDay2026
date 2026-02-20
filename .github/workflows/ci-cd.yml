@@ -1,0 +1,341 @@
+name: CI/CD
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment for CD'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - test
+          - prod
+      instanceNumber:
+        description: 'Instance number for resource naming'
+        required: true
+        default: '123'
+        type: string
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+env:
+  PREFIX: ops-demo
+  INSTANCE_NUMBER: ${{ inputs.instanceNumber || '123' }}
+  ENVIRONMENT: ${{ inputs.environment || 'dev' }}
+  ACR_NAME: acropsdemo${{ inputs.environment || 'dev' }}${{ inputs.instanceNumber || '123' }}
+  RESOURCE_GROUP: rg-${{ inputs.environment || 'dev' }}-${{ inputs.instanceNumber || '123' }}
+  IMAGE_NAME: program-demo-api
+
+# ─────────────────────────────────────────────
+# Stage 1: CI — runs on every push / PR
+# ─────────────────────────────────────────────
+jobs:
+  backend-ci:
+    name: Backend Build & Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build and test
+        run: mvn clean verify
+
+  frontend-ci:
+    name: Frontend Build & Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test --if-present
+
+      - name: Build
+        run: npm run build
+
+# ─────────────────────────────────────────────
+# Stage 2: Tag — only on push to main after CI
+# ─────────────────────────────────────────────
+  tag:
+    name: Create Version Tag
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && !failure() && !cancelled()
+    needs: [backend-ci, frontend-ci]
+    permissions:
+      contents: write
+    timeout-minutes: 10
+    outputs:
+      new_version: ${{ steps.bump.outputs.new_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest tag
+        id: latest_tag
+        run: |
+          TAG=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+          if [ -z "$TAG" ]; then
+            echo "version=0.0.0" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bump patch version
+        id: bump
+        run: |
+          IFS='.' read -r major minor patch <<< "${{ steps.latest_tag.outputs.version }}"
+          NEW_PATCH=$((patch + 1))
+          NEW_VERSION="${major}.${minor}.${NEW_PATCH}"
+          echo "new_version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "New version: v${NEW_VERSION}"
+
+      - name: Create and push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${{ steps.bump.outputs.new_version }}" -m "v${{ steps.bump.outputs.new_version }}"
+          git push origin "v${{ steps.bump.outputs.new_version }}"
+
+# ─────────────────────────────────────────────
+# Stage 3: CD — runs after tagging
+# ─────────────────────────────────────────────
+  build-and-push-backend:
+    name: Build and Push Backend Container
+    runs-on: ubuntu-latest
+    needs: tag
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+      id-token: write
+    timeout-minutes: 20
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set image metadata
+        id: meta
+        run: |
+          VERSION="v${{ needs.tag.outputs.new_version }}"
+          TAG="${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${VERSION}"
+          echo "tags=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Image tag: $TAG"
+
+      - name: Build and push Docker image via ACR Tasks
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            VERSION="v${{ needs.tag.outputs.new_version }}"
+            az acr build \
+              --registry "${{ env.ACR_NAME }}" \
+              --image "${{ env.IMAGE_NAME }}:${VERSION}" \
+              --image "${{ env.IMAGE_NAME }}:latest" \
+              --file backend/Dockerfile \
+              backend/
+
+  build-frontend:
+    name: Build Frontend for Deployment
+    runs-on: ubuntu-latest
+    needs: tag
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        env:
+          VITE_API_URL: https://app-${{ env.PREFIX }}-api-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}.azurewebsites.net
+        run: npm run build
+
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist-${{ needs.tag.outputs.new_version }}
+          path: frontend/dist
+          retention-days: 7
+
+  deploy-backend:
+    name: Deploy Backend Container
+    runs-on: ubuntu-latest
+    needs: [build-and-push-backend, tag]
+    permissions:
+      contents: read
+      id-token: write
+    timeout-minutes: 15
+    environment: ${{ inputs.environment || 'dev' }}
+    steps:
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy container to App Service
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            APP_NAME="app-${{ env.PREFIX }}-api-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
+            IMAGE="${{ needs.build-and-push-backend.outputs.image-tag }}"
+
+            az webapp config container set \
+              --resource-group "${{ env.RESOURCE_GROUP }}" \
+              --name "$APP_NAME" \
+              --container-image-name "$IMAGE" \
+              --container-registry-url "https://${{ env.ACR_NAME }}.azurecr.io" \
+              --only-show-errors
+
+            az webapp config set \
+              --resource-group "${{ env.RESOURCE_GROUP }}" \
+              --name "$APP_NAME" \
+              --startup-file "" \
+              --only-show-errors
+
+            az webapp restart \
+              --resource-group "${{ env.RESOURCE_GROUP }}" \
+              --name "$APP_NAME" \
+              --only-show-errors
+
+      - name: Health check — backend
+        run: |
+          APP_NAME="app-${{ env.PREFIX }}-api-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
+          URL="https://${APP_NAME}.azurewebsites.net/api/programs"
+          echo "Checking $URL ..."
+          for i in {1..10}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+            if [ "$STATUS" = "200" ]; then
+              echo "Health check passed (HTTP $STATUS)"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $STATUS — retrying in 15s..."
+            sleep 15
+          done
+          echo "Health check failed after 10 attempts."
+          exit 1
+
+  deploy-frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    needs: [build-frontend, tag]
+    permissions:
+      contents: read
+      id-token: write
+    timeout-minutes: 15
+    environment: ${{ inputs.environment || 'dev' }}
+    steps:
+      - name: Download frontend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist-${{ needs.tag.outputs.new_version }}
+          path: frontend-artifact
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'app-${{ env.PREFIX }}-web-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}'
+          package: frontend-artifact
+
+      - name: Configure startup and restart
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            az webapp config set \
+              --resource-group "${{ env.RESOURCE_GROUP }}" \
+              --name "app-${{ env.PREFIX }}-web-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}" \
+              --startup-file "pm2 serve /home/site/wwwroot --no-daemon --spa" \
+              --only-show-errors
+            az webapp restart \
+              --resource-group "${{ env.RESOURCE_GROUP }}" \
+              --name "app-${{ env.PREFIX }}-web-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}" \
+              --only-show-errors
+
+      - name: Health check — frontend
+        run: |
+          APP_NAME="app-${{ env.PREFIX }}-web-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
+          URL="https://${APP_NAME}.azurewebsites.net"
+          echo "Checking $URL ..."
+          for i in {1..10}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+            if [ "$STATUS" = "200" ]; then
+              echo "Health check passed (HTTP $STATUS)"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $STATUS — retrying in 15s..."
+            sleep 15
+          done
+          echo "Health check failed after 10 attempts."
+          exit 1
