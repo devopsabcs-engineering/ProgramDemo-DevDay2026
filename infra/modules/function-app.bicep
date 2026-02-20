@@ -24,10 +24,20 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' existing 
 
 var storageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}'
 
+var contentShareName = 'func-${config.prefix}-${config.environment}-${config.instanceNumber}'
+
 var baseAppSettings = [
   {
     name: 'AzureWebJobsStorage'
     value: storageConnectionString
+  }
+  {
+    name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
+    value: storageConnectionString
+  }
+  {
+    name: 'WEBSITE_CONTENTSHARE'
+    value: contentShareName
   }
   {
     name: 'FUNCTIONS_EXTENSION_VERSION'
