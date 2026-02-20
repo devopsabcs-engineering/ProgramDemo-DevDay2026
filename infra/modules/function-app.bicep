@@ -39,6 +39,19 @@ var baseAppSettings = [
     value: userAssignedIdentityClientId
   }
   {
+    // ARM requires this setting on Consumption plans even when using
+    // identity-based connections.  Set to empty string so the platform
+    // does not attempt shared-key access.
+    name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
+    value: ''
+  }
+  {
+    // Skip the platform-level shared-key validation of the content share
+    // connection — we authenticate via managed identity instead.
+    name: 'WEBSITE_SKIP_CONTENTSHARE_VALIDATION'
+    value: '1'
+  }
+  {
     name: 'WEBSITE_CONTENTSHARE'
     value: contentShareName
   }
