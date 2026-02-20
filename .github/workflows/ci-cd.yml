@@ -121,18 +121,18 @@ jobs:
         run: npm run build
 
 # ─────────────────────────────────────────────
-# Stage 2: Tag — only on push to main after CI
+# Stage 2: Tag — push: bump + create; dispatch: reuse latest
 # ─────────────────────────────────────────────
   tag:
-    name: Create Version Tag
+    name: Create or Reuse Version Tag
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && !failure() && !cancelled()
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && !failure() && !cancelled()
     needs: [backend-ci, frontend-ci]
     permissions:
       contents: write
     timeout-minutes: 10
     outputs:
-      new_version: ${{ steps.bump.outputs.new_version }}
+      new_version: ${{ steps.resolve.outputs.new_version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -149,21 +149,33 @@ jobs:
             echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Bump patch version
-        id: bump
+      - name: Resolve version
+        id: resolve
         run: |
-          IFS='.' read -r major minor patch <<< "${{ steps.latest_tag.outputs.version }}"
-          NEW_PATCH=$((patch + 1))
-          NEW_VERSION="${major}.${minor}.${NEW_PATCH}"
-          echo "new_version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
-          echo "New version: v${NEW_VERSION}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Reuse the latest existing tag — no new increment on manual re-deploy
+            VERSION="${{ steps.latest_tag.outputs.version }}"
+            if [ "$VERSION" = "0.0.0" ]; then
+              VERSION="0.0.1"
+            fi
+            echo "new_version=${VERSION}" >> "$GITHUB_OUTPUT"
+            echo "Reusing existing tag: v${VERSION}"
+          else
+            # push to main: bump patch and create a new tag
+            IFS='.' read -r major minor patch <<< "${{ steps.latest_tag.outputs.version }}"
+            NEW_PATCH=$((patch + 1))
+            NEW_VERSION="${major}.${minor}.${NEW_PATCH}"
+            echo "new_version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+            echo "New version: v${NEW_VERSION}"
+          fi
 
       - name: Create and push tag
+        if: github.event_name == 'push'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "v${{ steps.bump.outputs.new_version }}" -m "v${{ steps.bump.outputs.new_version }}"
-          git push origin "v${{ steps.bump.outputs.new_version }}"
+          git tag -a "v${{ steps.resolve.outputs.new_version }}" -m "v${{ steps.resolve.outputs.new_version }}"
+          git push origin "v${{ steps.resolve.outputs.new_version }}"
 
 # ─────────────────────────────────────────────
 # Stage 3: CD — runs after tagging
