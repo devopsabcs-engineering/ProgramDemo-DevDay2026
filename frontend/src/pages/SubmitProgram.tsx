@@ -35,9 +35,10 @@ export function SubmitProgram() {
     programDescription: '',
     programTypeId: 0,
     submittedBy: '',
-    documentUrl: '',
     budget: null,
   });
+
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -112,7 +113,7 @@ export function SubmitProgram() {
 
     setSubmitting(true);
     try {
-      const response = await createProgram(formData);
+      const response = await createProgram(formData, documentFile ?? undefined);
       navigate('/confirmation', { state: { program: response } });
     } catch (err) {
       console.error('Program submission failed:', err);
@@ -289,20 +290,55 @@ export function SubmitProgram() {
           />
         </div>
 
-        {/* Document URL */}
+        {/* Supporting Document (PDF) */}
         <div className="ontario-form-group">
-          <label htmlFor="documentUrl" className="ontario-label">
-            {t('submit.documentUrl')}
+          <label className="ontario-label" htmlFor="document">
+            {t('submit.document')}
+            <span className="ontario-label__flag">({t('common.optional')})</span>
           </label>
+          <p id="document-hint" className="ontario-hint">
+            {t('submit.documentHint')}
+          </p>
+          {errors.document && (
+            <span
+              className="ontario-error-messaging"
+              id="document-error"
+              role="alert"
+            >
+              {errors.document}
+            </span>
+          )}
           <input
-            type="url"
-            id="documentUrl"
-            name="documentUrl"
             className="ontario-input"
-            value={formData.documentUrl}
-            onChange={handleChange}
-            placeholder={t('submit.documentUrlPlaceholder')}
-            autoComplete="url"
+            type="file"
+            id="document"
+            name="document"
+            accept=".pdf"
+            aria-describedby={`document-hint${errors.document ? ' document-error' : ''}`}
+            aria-invalid={!!errors.document}
+            onChange={(e) => {
+              const file = e.target.files?.[0] ?? null;
+              if (file && file.type !== 'application/pdf') {
+                setErrors((prev) => ({
+                  ...prev,
+                  document: t('submit.documentErrorType'),
+                }));
+                setDocumentFile(null);
+              } else if (file && file.size > 50 * 1024 * 1024) {
+                setErrors((prev) => ({
+                  ...prev,
+                  document: t('submit.documentErrorSize'),
+                }));
+                setDocumentFile(null);
+              } else {
+                setErrors((prev) => {
+                  const next = { ...prev };
+                  delete next.document;
+                  return next;
+                });
+                setDocumentFile(file);
+              }
+            }}
           />
         </div>
 

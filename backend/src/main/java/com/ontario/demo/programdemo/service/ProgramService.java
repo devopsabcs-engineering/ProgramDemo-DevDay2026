@@ -151,9 +151,44 @@ public class ProgramService {
                 .reviewedBy(program.getReviewedBy())
                 .reviewComments(program.getReviewComments())
                 .documentUrl(program.getDocumentUrl())
+                .aiSummary(program.getAiSummary())
                 .budget(program.getBudget())
                 .createdDate(program.getCreatedDate())
                 .updatedDate(program.getUpdatedDate())
                 .build();
+    }
+
+    /**
+     * Updates the document URL for a program after a successful blob upload.
+     *
+     * @param id          the program ID
+     * @param documentUrl the full blob URL of the uploaded document
+     * @throws IllegalArgumentException if the program is not found
+     */
+    @Transactional
+    public void updateDocumentUrl(Long id, String documentUrl) {
+        Program program = programRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Program not found with ID: " + id));
+        program.setDocumentUrl(documentUrl);
+        programRepository.save(program);
+    }
+
+    /**
+     * Persists an AI-generated summary for a program submission.
+     * Called via PATCH callback from the Azure Function App after document analysis.
+     *
+     * @param id      the program ID
+     * @param summary the AI-generated plain-language summary
+     * @throws IllegalArgumentException if the program is not found
+     */
+    @Transactional
+    public void updateAiSummary(Long id, String summary) {
+        Program program = programRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Program not found with ID: " + id));
+        program.setAiSummary(summary);
+        program.setAiSummaryGeneratedDate(java.time.LocalDateTime.now());
+        programRepository.save(program);
     }
 }

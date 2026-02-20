@@ -25,6 +25,9 @@
     "toggle": "Français",
     "label": "Select language"
   },
+  "common": {
+    "optional": "optional"
+  },
   "submit": {
     "title": "Submit a Program Request",
     "description": "Use this form to submit a new program request for ministry review.",
@@ -38,6 +41,10 @@
     "submittedByPlaceholder": "Enter your email address",
     "documentUrl": "Supporting Document URL (optional)",
     "documentUrlPlaceholder": "https://example.com/document.pdf",
+    "document": "Supporting Document (PDF)",
+    "documentHint": "Attach a PDF document to help reviewers understand your program. Maximum 50 MB.",
+    "documentErrorType": "Only PDF files are accepted. Please select a .pdf file.",
+    "documentErrorSize": "File size exceeds 50 MB. Please attach a smaller PDF.",
     "budget": "Program Budget (optional)",
     "budgetPlaceholder": "e.g. 250000.00",
     "budgetInvalid": "Please enter a valid budget amount (e.g. 250000.00).",
@@ -133,7 +140,9 @@
       "reviewedBy": "Reviewed By",
       "reviewComments": "Review Comments",
       "alreadyReviewedTitle": "Review Complete",
-      "alreadyReviewedMessage": "This program has already been reviewed. Current status: {{status}}."
+      "alreadyReviewedMessage": "This program has already been reviewed. Current status: {{status}}.",
+      "aiSummaryHeading": "AI Document Summary",
+      "aiSummaryDisclaimer": "This summary was generated automatically by AI. Verify important details in the attached document."
     },
     "form": {
       "title": "Submit Review Decision",

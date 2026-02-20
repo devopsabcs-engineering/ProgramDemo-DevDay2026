@@ -168,6 +168,19 @@ export function ReviewDetail() {
         />
       )}
 
+      {/* AI Document Summary (shown when the Function App has generated one) */}
+      {program.aiSummary && (
+        <section aria-labelledby="ai-summary-heading">
+          <h2 id="ai-summary-heading" className="ontario-h3">
+            {t('review.detail.aiSummaryHeading')}
+          </h2>
+          <div className="ontario-callout">
+            <p className="ontario-callout__body">{program.aiSummary}</p>
+            <p className="ontario-hint">{t('review.detail.aiSummaryDisclaimer')}</p>
+          </div>
+        </section>
+      )}
+
       {/* Already reviewed message */}
       {!canReview && (
         <div

@@ -20,15 +20,30 @@ const apiClient = axios.create({
 });
 
 /**
- * Submits a new program request.
+ * Submits a new program request using multipart/form-data.
  *
- * @param data - The program submission data
+ * The program JSON data is sent as the {@code program} part;
+ * an optional PDF document is sent as the {@code document} part.
+ *
+ * @param data     - The program submission data
+ * @param document - Optional PDF file to attach
  * @returns The created program response
  */
 export async function createProgram(
-  data: ProgramRequest
+  data: ProgramRequest,
+  document?: File
 ): Promise<ProgramResponse> {
-  const response = await apiClient.post<ProgramResponse>('/programs', data);
+  const form = new FormData();
+  form.append(
+    'program',
+    new Blob([JSON.stringify(data)], { type: 'application/json' })
+  );
+  if (document) {
+    form.append('document', document);
+  }
+  const response = await apiClient.post<ProgramResponse>('/programs', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
   return response.data;
 }
 

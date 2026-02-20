@@ -11,6 +11,9 @@ param config DeploymentConfig
 @description('Name of the storage account used by the Function App runtime.')
 param storageAccountName string
 
+@description('Additional application settings to merge into the Function App configuration.')
+param additionalAppSettings array = []
+
 /* ─── Existing Resources ─── */
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' existing = {
@@ -20,6 +23,27 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' existing 
 /* ─── Variables ─── */
 
 var storageConnectionString = 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}'
+
+var baseAppSettings = [
+  {
+    name: 'AzureWebJobsStorage'
+    value: storageConnectionString
+  }
+  {
+    name: 'FUNCTIONS_EXTENSION_VERSION'
+    value: '~4'
+  }
+  {
+    name: 'FUNCTIONS_WORKER_RUNTIME'
+    value: 'dotnet-isolated'
+  }
+  {
+    name: 'WEBSITE_RUN_FROM_PACKAGE'
+    value: '1'
+  }
+]
+
+var allAppSettings = concat(baseAppSettings, additionalAppSettings)
 
 /* ─── Resources ─── */
 
@@ -39,6 +63,9 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
   location: config.location
   tags: config.tags
   kind: 'functionapp'
+  identity: {
+    type: 'SystemAssigned'
+  }
   properties: {
     serverFarmId: consumptionPlan.id
     httpsOnly: true
@@ -46,24 +73,7 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
       netFrameworkVersion: 'v8.0'
-      appSettings: [
-        {
-          name: 'AzureWebJobsStorage'
-          value: storageConnectionString
-        }
-        {
-          name: 'FUNCTIONS_EXTENSION_VERSION'
-          value: '~4'
-        }
-        {
-          name: 'FUNCTIONS_WORKER_RUNTIME'
-          value: 'dotnet-isolated'
-        }
-        {
-          name: 'WEBSITE_RUN_FROM_PACKAGE'
-          value: '1'
-        }
-      ]
+      appSettings: allAppSettings
     }
   }
 }
@@ -78,3 +88,6 @@ output name string = functionApp.name
 
 @description('The default hostname of the Function App.')
 output defaultHostName string = functionApp.properties.defaultHostName
+
+@description('The principal ID of the system-assigned managed identity.')
+output principalId string = functionApp.identity.principalId
