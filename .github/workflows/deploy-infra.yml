@@ -13,9 +13,9 @@ on:
           - test
           - prod
       instanceNumber:
-        description: 'Instance number for resource naming'
+        description: 'Instance number for resource naming (overrides vars.INSTANCE_NUMBER)'
         required: true
-        default: '125'
+        default: '125'  # UI hint only — GitHub does not support expressions here. Keep in sync with vars.INSTANCE_NUMBER.
         type: string
       resourceGroupLocation:
         description: 'Azure region for the resource group'

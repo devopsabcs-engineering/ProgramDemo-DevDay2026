@@ -13,9 +13,9 @@ on:
           - test
           - prod
       instanceNumber:
-        description: 'Instance number for resource naming'
+        description: 'Instance number for resource naming (overrides vars.INSTANCE_NUMBER)'
         required: true
-        default: '125'
+        default: '125'  # UI hint only — GitHub does not support expressions here. Keep in sync with vars.INSTANCE_NUMBER.
         type: string
   push:
     branches:
@@ -33,10 +33,12 @@ concurrency:
 
 env:
   PREFIX: ops-demo
-  INSTANCE_NUMBER: ${{ inputs.instanceNumber || '125' }}
+  # Prefer the workflow_dispatch input; fall back to the repo variable vars.INSTANCE_NUMBER.
+  # To change the default for push/PR-triggered runs, update the repository variable instead of editing this file.
+  INSTANCE_NUMBER: ${{ inputs.instanceNumber || vars.INSTANCE_NUMBER }}
   ENVIRONMENT: ${{ inputs.environment || 'dev' }}
-  ACR_NAME: acropsdemo${{ inputs.environment || 'dev' }}${{ inputs.instanceNumber || '125' }}
-  RESOURCE_GROUP: rg-${{ inputs.environment || 'dev' }}-${{ inputs.instanceNumber || '125' }}
+  ACR_NAME: acropsdemo${{ inputs.environment || 'dev' }}${{ inputs.instanceNumber || vars.INSTANCE_NUMBER }}
+  RESOURCE_GROUP: rg-${{ inputs.environment || 'dev' }}-${{ inputs.instanceNumber || vars.INSTANCE_NUMBER }}
   IMAGE_NAME: program-demo-api
 
 # ─────────────────────────────────────────────
@@ -253,7 +255,7 @@ jobs:
       contents: read
       id-token: write
     timeout-minutes: 15
-    environment: ${{ inputs.environment || 'dev' }}-${{ inputs.instanceNumber || '125' }}
+    environment: ${{ inputs.environment || 'dev' }}-${{ inputs.instanceNumber || vars.INSTANCE_NUMBER }}
     steps:
       - name: Azure Login
         uses: azure/login@v2
@@ -308,7 +310,7 @@ jobs:
       contents: read
       id-token: write
     timeout-minutes: 15
-    environment: ${{ inputs.environment || 'dev' }}-${{ inputs.instanceNumber || '125' }}
+    environment: ${{ inputs.environment || 'dev' }}-${{ inputs.instanceNumber || vars.INSTANCE_NUMBER }}
     steps:
       - name: Download frontend artifact
         uses: actions/download-artifact@v4
