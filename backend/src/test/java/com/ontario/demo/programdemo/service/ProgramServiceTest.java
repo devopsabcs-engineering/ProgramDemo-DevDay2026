@@ -61,6 +61,7 @@ class ProgramServiceTest {
         submittedProgram.setProgramType(healthType);
         submittedProgram.setStatus(ProgramStatus.SUBMITTED);
         submittedProgram.setSubmittedBy("citizen@example.com");
+        submittedProgram.setBudget(new java.math.BigDecimal("250000.00"));
         submittedProgram.setCreatedDate(LocalDateTime.now());
         submittedProgram.setUpdatedDate(LocalDateTime.now());
     }
@@ -262,6 +263,25 @@ class ProgramServiceTest {
         assertThatThrownBy(() -> programService.reviewProgram(1L, request))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Review status must be APPROVED or REJECTED");
+    }
+
+    @Test
+    @DisplayName("createProgram — budget is mapped to response")
+    void createProgram_withBudget_returnsBudgetInResponse() {
+        ProgramRequest request = ProgramRequest.builder()
+                .programName("Test Program")
+                .programDescription("A test program description")
+                .programTypeId(1)
+                .submittedBy("citizen@example.com")
+                .budget(new java.math.BigDecimal("250000.00"))
+                .build();
+
+        when(programTypeRepository.findById(1)).thenReturn(Optional.of(healthType));
+        when(programRepository.save(any(Program.class))).thenReturn(submittedProgram);
+
+        ProgramResponse response = programService.createProgram(request);
+
+        assertThat(response.getBudget()).isEqualByComparingTo(new java.math.BigDecimal("250000.00"));
     }
 
     @Test

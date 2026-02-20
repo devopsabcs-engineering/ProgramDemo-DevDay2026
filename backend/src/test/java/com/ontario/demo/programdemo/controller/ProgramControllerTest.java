@@ -60,6 +60,7 @@ class ProgramControllerTest {
                 .programTypeNameFr("Santé")
                 .status(status)
                 .submittedBy("citizen@example.com")
+                .budget(new java.math.BigDecimal("250000.00"))
                 .createdDate(LocalDateTime.now())
                 .updatedDate(LocalDateTime.now())
                 .build();
@@ -237,6 +238,42 @@ class ProgramControllerTest {
                         .content(objectMapper.writeValueAsString(reviewRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("REJECTED"));
+    }
+
+    @Test
+    @DisplayName("POST /api/programs — negative budget returns 400")
+    void createProgram_negativeBudget_returns400() throws Exception {
+        ProgramRequest request = ProgramRequest.builder()
+                .programName("Test Program")
+                .programDescription("A description")
+                .programTypeId(1)
+                .budget(new java.math.BigDecimal("-100.00"))
+                .build();
+
+        mockMvc.perform(post("/api/programs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /api/programs — valid budget is returned in response")
+    void createProgram_withBudget_returnsBudgetInResponse() throws Exception {
+        ProgramRequest request = ProgramRequest.builder()
+                .programName("Test Program")
+                .programDescription("A test program description")
+                .programTypeId(1)
+                .submittedBy("citizen@example.com")
+                .budget(new java.math.BigDecimal("250000.00"))
+                .build();
+        ProgramResponse response = sampleResponse(1L, ProgramStatus.SUBMITTED);
+        when(programService.createProgram(any(ProgramRequest.class))).thenReturn(response);
+
+        mockMvc.perform(post("/api/programs")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.budget").value(250000.00));
     }
 
     @Test

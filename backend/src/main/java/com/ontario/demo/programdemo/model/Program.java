@@ -71,6 +71,10 @@ public class Program {
     @Column(name = "document_url", length = 500)
     private String documentUrl;
 
+    /** Requested budget for the program in Canadian dollars. */
+    @Column(name = "budget", precision = 15, scale = 2)
+    private java.math.BigDecimal budget;
+
     /** Record creation timestamp. */
     @Column(name = "created_date", nullable = false, updatable = false)
     private LocalDateTime createdDate;

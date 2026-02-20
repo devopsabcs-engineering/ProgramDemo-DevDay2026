@@ -150,6 +150,7 @@ describe('SubmitProgram', () => {
       programTypeNameFr: 'Santé',
       status: 'SUBMITTED',
       submittedBy: 'test@example.com',
+      budget: null,
       createdDate: '2026-02-19T00:00:00',
       updatedDate: '2026-02-19T00:00:00',
     };

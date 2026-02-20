@@ -53,6 +53,9 @@ public class ProgramResponse {
     /** URL to the supporting document. */
     private String documentUrl;
 
+    /** Requested budget for the program in Canadian dollars. */
+    private java.math.BigDecimal budget;
+
     /** Record creation timestamp. */
     private LocalDateTime createdDate;
 

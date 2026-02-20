@@ -38,6 +38,9 @@
     "submittedByPlaceholder": "Enter your email address",
     "documentUrl": "Supporting Document URL (optional)",
     "documentUrlPlaceholder": "https://example.com/document.pdf",
+    "budget": "Program Budget (optional)",
+    "budgetPlaceholder": "e.g. 250000.00",
+    "budgetInvalid": "Please enter a valid budget amount (e.g. 250000.00).",
     "submitButton": "Submit Request",
     "submitting": "Submitting...",
     "required": "required"
