@@ -70,41 +70,39 @@ export function SearchPrograms() {
       {/* Search Form */}
       <form
         onSubmit={handleSearch}
-        className="ontario-form-group"
+        className="ontario-search-form"
         role="search"
       >
-        <label htmlFor="search-input" className="ontario-label ontario-label--visually-hidden">
-          {t('search.title')}
-        </label>
-        <div className="ontario-row">
-          <div className="ontario-columns ontario-small-12 ontario-medium-6">
-            <input
-              type="text"
-              id="search-input"
-              className="ontario-input"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t('search.searchPlaceholder')}
-              autoComplete="off"
-            />
-          </div>
-          <div className="ontario-columns ontario-small-12 ontario-medium-6">
+        <div className="ontario-search-form__input-group">
+          <label htmlFor="search-input" className="ontario-label">
+            {t('search.title')}
+          </label>
+          <input
+            type="text"
+            id="search-input"
+            className="ontario-input"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t('search.searchPlaceholder')}
+            autoComplete="off"
+          />
+        </div>
+        <div className="ontario-search-form__actions">
+          <button
+            type="submit"
+            className="ontario-button ontario-button--primary"
+          >
+            {t('search.searchButton')}
+          </button>
+          {search && (
             <button
-              type="submit"
-              className="ontario-button ontario-button--primary"
+              type="button"
+              className="ontario-button ontario-button--tertiary"
+              onClick={handleClear}
             >
-              {t('search.searchButton')}
+              {t('search.clearButton')}
             </button>
-            {search && (
-              <button
-                type="button"
-                className="ontario-button ontario-button--tertiary"
-                onClick={handleClear}
-              >
-                {t('search.clearButton')}
-              </button>
-            )}
-          </div>
+          )}
         </div>
       </form>
 

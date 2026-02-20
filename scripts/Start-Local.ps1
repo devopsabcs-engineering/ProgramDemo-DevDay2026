@@ -241,7 +241,21 @@ if (-not $BackendOnly) {
 
         Push-Location $FrontendDir
         try {
-            if (-not (Test-Path (Join-Path $FrontendDir 'node_modules'))) {
+            $nodeModulesPath = Join-Path $FrontendDir 'node_modules'
+            $packageJsonPath = Join-Path $FrontendDir 'package.json'
+            $needsInstall = -not (Test-Path $nodeModulesPath)
+
+            # Also reinstall if package.json is newer than node_modules
+            if (-not $needsInstall -and (Test-Path $packageJsonPath)) {
+                $pkgTime = (Get-Item $packageJsonPath).LastWriteTimeUtc
+                $nmTime  = (Get-Item $nodeModulesPath).LastWriteTimeUtc
+                if ($pkgTime -gt $nmTime) {
+                    $needsInstall = $true
+                    Write-Host "  package.json changed since last install." -ForegroundColor Yellow
+                }
+            }
+
+            if ($needsInstall) {
                 Write-Host "Running: npm install" -ForegroundColor Gray
                 & npm install
                 if ($LASTEXITCODE -ne 0) {
@@ -249,7 +263,7 @@ if (-not $BackendOnly) {
                 }
             }
             else {
-                Write-Host "  node_modules exists, skipping npm install." -ForegroundColor Gray
+                Write-Host "  node_modules up to date, skipping npm install." -ForegroundColor Gray
             }
             Write-Host "  Frontend dependencies ready." -ForegroundColor Green
         }

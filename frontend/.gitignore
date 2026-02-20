@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# ODS assets copied from node_modules by postinstall script
+public/favicons
+public/styles
+public/favicon.ico
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

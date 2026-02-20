@@ -5,7 +5,10 @@
   },
   "header": {
     "title": "Ontario Program Services",
-    "menuToggle": "Menu",
+    "subtitle": "Find information about programs and services all in one easy place.",
+    "menuToggle": "Topics",
+    "search": "Search",
+    "ontarioLogo": "Ontario",
     "nav": {
       "submit": "Submit Program",
       "search": "Search Programs"

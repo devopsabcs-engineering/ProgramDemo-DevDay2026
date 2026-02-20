@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import './App.css';
 import { Layout } from './components/layout/Layout';
 import { SubmitProgram } from './pages/SubmitProgram';
 import { SubmitConfirmation } from './pages/SubmitConfirmation';

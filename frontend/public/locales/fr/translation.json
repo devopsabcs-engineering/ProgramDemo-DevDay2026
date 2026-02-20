@@ -5,7 +5,10 @@
   },
   "header": {
     "title": "Services de programmes de l'Ontario",
-    "menuToggle": "Menu",
+    "subtitle": "Trouvez des informations sur les programmes et services en un seul endroit.",
+    "menuToggle": "Sujets",
+    "search": "Rechercher",
+    "ontarioLogo": "Ontario",
     "nav": {
       "submit": "Soumettre un programme",
       "search": "Rechercher des programmes"
