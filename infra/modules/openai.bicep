@@ -1,5 +1,5 @@
 metadata name = 'Azure OpenAI'
-metadata description = 'Deploys an Azure OpenAI account with a gpt-4o model deployment for AI-powered document summarization.'
+metadata description = 'Deploys an Azure OpenAI account with a gpt-4o-mini model deployment for AI-powered document summarization.'
 
 import { DeploymentConfig } from '../types.bicep'
 
@@ -9,7 +9,7 @@ import { DeploymentConfig } from '../types.bicep'
 param config DeploymentConfig
 
 @description('Chat model deployment name.')
-param chatModelDeploymentName string = 'gpt-4o'
+param chatModelDeploymentName string = 'gpt-4o-mini'
 
 /* ─── Variables ─── */
 
@@ -42,8 +42,8 @@ resource chatDeployment 'Microsoft.CognitiveServices/accounts/deployments@2024-0
   properties: {
     model: {
       format: 'OpenAI'
-      name: 'gpt-4o'
-      version: '2024-11-20'
+      name: 'gpt-4o-mini'
+      version: '2024-07-18'
     }
   }
 }
