@@ -38,6 +38,9 @@
     "submittedByPlaceholder": "Entrez votre adresse courriel",
     "documentUrl": "URL du document justificatif (facultatif)",
     "documentUrlPlaceholder": "https://exemple.com/document.pdf",
+    "budget": "Budget du programme (facultatif)",
+    "budgetPlaceholder": "p. ex. 250000.00",
+    "budgetInvalid": "Veuillez entrer un montant de budget valide (p. ex. 250000.00).",
     "submitButton": "Soumettre la demande",
     "submitting": "Soumission en cours...",
     "required": "obligatoire"

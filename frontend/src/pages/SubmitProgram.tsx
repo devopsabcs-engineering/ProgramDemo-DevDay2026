@@ -36,6 +36,7 @@ export function SubmitProgram() {
     programTypeId: 0,
     submittedBy: '',
     documentUrl: '',
+    budget: null,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -61,6 +62,13 @@ export function SubmitProgram() {
     ) {
       newErrors.submittedBy = t('validation.emailInvalid');
     }
+    if (
+      formData.budget !== null &&
+      formData.budget !== undefined &&
+      (isNaN(Number(formData.budget)) || Number(formData.budget) < 0)
+    ) {
+      newErrors.budget = t('submit.budgetInvalid');
+    }
 
     return newErrors;
   };
@@ -73,7 +81,14 @@ export function SubmitProgram() {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'programTypeId' ? Number(value) : value,
+      [name]:
+        name === 'programTypeId'
+          ? Number(value)
+          : name === 'budget'
+          ? value === ''
+            ? null
+            : Number(value)
+          : value,
     }));
     // Clear the field error when user starts typing
     if (errors[name]) {
@@ -288,6 +303,38 @@ export function SubmitProgram() {
             onChange={handleChange}
             placeholder={t('submit.documentUrlPlaceholder')}
             autoComplete="url"
+          />
+        </div>
+
+        {/* Budget */}
+        <div className="ontario-form-group">
+          <label htmlFor="budget" className="ontario-label">
+            {t('submit.budget')}
+          </label>
+          {errors.budget && (
+            <span
+              className="ontario-error-messaging"
+              id="budget-error"
+              role="alert"
+            >
+              {errors.budget}
+            </span>
+          )}
+          <input
+            type="number"
+            id="budget"
+            name="budget"
+            className={`ontario-input ${
+              errors.budget ? 'ontario-input--error' : ''
+            }`}
+            value={formData.budget ?? ''}
+            onChange={handleChange}
+            placeholder={t('submit.budgetPlaceholder')}
+            min="0"
+            step="0.01"
+            aria-describedby={errors.budget ? 'budget-error' : undefined}
+            aria-invalid={!!errors.budget}
+            autoComplete="off"
           />
         </div>
 

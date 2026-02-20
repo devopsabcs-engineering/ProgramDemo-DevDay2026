@@ -40,4 +40,9 @@ public class ProgramRequest {
     /** URL to a supporting document. */
     @Size(max = 500, message = "Document URL must not exceed 500 characters")
     private String documentUrl;
+
+    /** Requested budget for the program in Canadian dollars. */
+    @jakarta.validation.constraints.DecimalMin(value = "0.00", message = "Budget must be zero or greater")
+    @jakarta.validation.constraints.Digits(integer = 13, fraction = 2, message = "Budget must have at most 13 integer digits and 2 decimal places")
+    private java.math.BigDecimal budget;
 }

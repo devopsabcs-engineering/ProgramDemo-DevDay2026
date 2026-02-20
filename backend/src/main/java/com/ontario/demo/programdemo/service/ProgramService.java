@@ -58,6 +58,7 @@ public class ProgramService {
         program.setStatus(ProgramStatus.SUBMITTED);
         program.setSubmittedBy(request.getSubmittedBy());
         program.setDocumentUrl(request.getDocumentUrl());
+        program.setBudget(request.getBudget());
 
         Program saved = programRepository.save(program);
         return toResponse(saved);
@@ -150,6 +151,7 @@ public class ProgramService {
                 .reviewedBy(program.getReviewedBy())
                 .reviewComments(program.getReviewComments())
                 .documentUrl(program.getDocumentUrl())
+                .budget(program.getBudget())
                 .createdDate(program.getCreatedDate())
                 .updatedDate(program.getUpdatedDate())
                 .build();

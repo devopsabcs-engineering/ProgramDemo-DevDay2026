@@ -13,6 +13,8 @@ export interface ProgramRequest {
   programTypeId: number;
   submittedBy?: string;
   documentUrl?: string;
+  /** Requested budget in Canadian dollars (optional). */
+  budget?: number | null;
 }
 
 /** Response body for a program submission. */
@@ -28,6 +30,8 @@ export interface ProgramResponse {
   reviewedBy: string | null;
   reviewComments: string | null;
   documentUrl: string | null;
+  /** Requested budget in Canadian dollars. */
+  budget: number | null;
   createdDate: string;
   updatedDate: string;
 }
