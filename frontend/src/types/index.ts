@@ -29,6 +29,8 @@ export interface ProgramResponse {
   reviewedBy: string | null;
   reviewComments: string | null;
   documentUrl: string | null;
+  /** AI-generated summary of the attached PDF document. */
+  aiSummary: string | null;
   /** Requested budget in Canadian dollars. */
   budget: number | null;
   createdDate: string;
