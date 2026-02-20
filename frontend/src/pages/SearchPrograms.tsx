@@ -162,7 +162,7 @@ export function SearchPrograms() {
                 <td>{formatDate(program.createdDate)}</td>
                 <td>
                   <Link
-                    to={`/programs/${program.id}`}
+                    to={`/review/${program.id}`}
                     className="ontario-button ontario-button--tertiary"
                   >
                     {t('search.table.view')}
