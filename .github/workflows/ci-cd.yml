@@ -262,16 +262,14 @@ jobs:
           echo "Image tag: $TAG"
 
       - name: Build and push Docker image via ACR Tasks
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            VERSION="v${{ needs.tag.outputs.new_version }}"
-            az acr build \
-              --registry "${{ env.ACR_NAME }}" \
-              --image "${{ env.IMAGE_NAME }}:${VERSION}" \
-              --image "${{ env.IMAGE_NAME }}:latest" \
-              --file backend/Dockerfile \
-              backend/
+        run: |
+          VERSION="v${{ needs.tag.outputs.new_version }}"
+          az acr build \
+            --registry "${{ env.ACR_NAME }}" \
+            --image "${{ env.IMAGE_NAME }}:${VERSION}" \
+            --image "${{ env.IMAGE_NAME }}:latest" \
+            --file backend/Dockerfile \
+            backend/
 
   build-frontend:
     name: Build Frontend for Deployment
@@ -308,16 +306,14 @@ jobs:
 
       - name: Get Application Insights connection string
         id: appinsights
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            APPI_NAME="appi-${{ env.PREFIX }}-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
-            CS=$(az monitor app-insights component show \
-              --app "$APPI_NAME" \
-              --resource-group "${{ env.RESOURCE_GROUP }}" \
-              --query "connectionString" \
-              --output tsv 2>/dev/null || echo "")
-            echo "connection_string=$CS" >> "$GITHUB_OUTPUT"
+        run: |
+          APPI_NAME="appi-${{ env.PREFIX }}-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
+          CS=$(az monitor app-insights component show \
+            --app "$APPI_NAME" \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --query "connectionString" \
+            --output tsv 2>/dev/null || echo "")
+          echo "connection_string=$CS" >> "$GITHUB_OUTPUT"
 
       - name: Build
         env:
@@ -385,25 +381,23 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Deploy container to App Service
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            APP_NAME="app-${{ env.PREFIX }}-api-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
-            IMAGE="${{ needs.build-and-push-backend.outputs.image-tag }}"
+        run: |
+          APP_NAME="app-${{ env.PREFIX }}-api-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
+          IMAGE="${{ needs.build-and-push-backend.outputs.image-tag }}"
 
-            # Update only the image tag — do not touch registry auth settings.
-            # ACR pull uses managed identity (acrUseManagedIdentityCreds set by Bicep).
-            az webapp config set \
-              --resource-group "${{ env.RESOURCE_GROUP }}" \
-              --name "$APP_NAME" \
-              --linux-fx-version "DOCKER|${IMAGE}" \
-              --startup-file "" \
-              --only-show-errors
+          # Update only the image tag — do not touch registry auth settings.
+          # ACR pull uses managed identity (acrUseManagedIdentityCreds set by Bicep).
+          az webapp config set \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --name "$APP_NAME" \
+            --linux-fx-version "DOCKER|${IMAGE}" \
+            --startup-file "" \
+            --only-show-errors
 
-            az webapp restart \
-              --resource-group "${{ env.RESOURCE_GROUP }}" \
-              --name "$APP_NAME" \
-              --only-show-errors
+          az webapp restart \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --name "$APP_NAME" \
+            --only-show-errors
 
       - name: Health check — backend
         run: |
@@ -454,18 +448,16 @@ jobs:
           package: frontend-artifact
 
       - name: Configure startup and restart
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            az webapp config set \
-              --resource-group "${{ env.RESOURCE_GROUP }}" \
-              --name "app-${{ env.PREFIX }}-web-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}" \
-              --startup-file "pm2 serve /home/site/wwwroot --no-daemon --spa" \
-              --only-show-errors
-            az webapp restart \
-              --resource-group "${{ env.RESOURCE_GROUP }}" \
-              --name "app-${{ env.PREFIX }}-web-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}" \
-              --only-show-errors
+        run: |
+          az webapp config set \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --name "app-${{ env.PREFIX }}-web-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}" \
+            --startup-file "pm2 serve /home/site/wwwroot --no-daemon --spa" \
+            --only-show-errors
+          az webapp restart \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --name "app-${{ env.PREFIX }}-web-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}" \
+            --only-show-errors
 
       - name: Health check — frontend
         run: |
@@ -513,26 +505,22 @@ jobs:
           zip -r ../functions.zip .
 
       - name: Deploy to Function App
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            FUNC_NAME="func-${{ env.PREFIX }}-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
+        run: |
+          FUNC_NAME="func-${{ env.PREFIX }}-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
 
-            az functionapp deployment source config-zip \
-              --resource-group "${{ env.RESOURCE_GROUP }}" \
-              --name "$FUNC_NAME" \
-              --src functions.zip \
-              --only-show-errors
+          az functionapp deployment source config-zip \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --name "$FUNC_NAME" \
+            --src functions.zip \
+            --only-show-errors
 
       - name: Verify function registration
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            FUNC_NAME="func-${{ env.PREFIX }}-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
-            echo "Waiting for functions to register..."
-            sleep 30
-            az functionapp function list \
-              --resource-group "${{ env.RESOURCE_GROUP }}" \
-              --name "$FUNC_NAME" \
-              --query "[].name" \
-              --output table
+        run: |
+          FUNC_NAME="func-${{ env.PREFIX }}-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
+          echo "Waiting for functions to register..."
+          sleep 30
+          az functionapp function list \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --name "$FUNC_NAME" \
+            --query "[].name" \
+            --output table

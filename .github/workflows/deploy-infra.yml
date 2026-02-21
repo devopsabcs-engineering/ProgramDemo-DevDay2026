@@ -48,33 +48,27 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Ensure resource group exists
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            az group create \
-              --name "rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
-              --location "${{ inputs.resourceGroupLocation }}" \
-              --only-show-errors
+        run: |
+          az group create \
+            --name "rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
+            --location "${{ inputs.resourceGroupLocation }}" \
+            --only-show-errors
 
       - name: Validate Bicep template
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            az deployment group validate \
-              --resource-group "rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
-              --template-file "${{ env.BICEP_DIR }}/main.bicep" \
-              --parameters "${{ env.BICEP_DIR }}/main.bicepparam" \
-              --parameters environment="${{ inputs.environment }}" instanceNumber="${{ inputs.instanceNumber }}"
+        run: |
+          az deployment group validate \
+            --resource-group "rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
+            --template-file "${{ env.BICEP_DIR }}/main.bicep" \
+            --parameters "${{ env.BICEP_DIR }}/main.bicepparam" \
+            --parameters environment="${{ inputs.environment }}" instanceNumber="${{ inputs.instanceNumber }}"
 
       - name: What-If analysis
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            az deployment group what-if \
-              --resource-group "rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
-              --template-file "${{ env.BICEP_DIR }}/main.bicep" \
-              --parameters "${{ env.BICEP_DIR }}/main.bicepparam" \
-              --parameters environment="${{ inputs.environment }}" instanceNumber="${{ inputs.instanceNumber }}"
+        run: |
+          az deployment group what-if \
+            --resource-group "rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
+            --template-file "${{ env.BICEP_DIR }}/main.bicep" \
+            --parameters "${{ env.BICEP_DIR }}/main.bicepparam" \
+            --parameters environment="${{ inputs.environment }}" instanceNumber="${{ inputs.instanceNumber }}"
 
   deploy:
     name: Deploy to Azure
@@ -97,38 +91,32 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Ensure resource group exists
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            az group create \
-              --name "rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
-              --location "${{ inputs.resourceGroupLocation }}" \
-              --only-show-errors
+        run: |
+          az group create \
+            --name "rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
+            --location "${{ inputs.resourceGroupLocation }}" \
+            --only-show-errors
 
       - name: Deploy Bicep template
-        uses: azure/cli@v2
         env:
           SQL_AAD_ADMIN_LOGIN: ${{ secrets.SQL_AAD_ADMIN_LOGIN }}
           SQL_AAD_ADMIN_OBJECT_ID: ${{ secrets.SQL_AAD_ADMIN_OBJECT_ID }}
-        with:
-          inlineScript: |
-            az deployment group create \
-              --resource-group "rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
-              --template-file "${{ env.BICEP_DIR }}/main.bicep" \
-              --parameters "${{ env.BICEP_DIR }}/main.bicepparam" \
-              --parameters environment="${{ inputs.environment }}" instanceNumber="${{ inputs.instanceNumber }}" \
-              --name "infra-$(date +%Y%m%d%H%M%S)"
+        run: |
+          az deployment group create \
+            --resource-group "rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
+            --template-file "${{ env.BICEP_DIR }}/main.bicep" \
+            --parameters "${{ env.BICEP_DIR }}/main.bicepparam" \
+            --parameters environment="${{ inputs.environment }}" instanceNumber="${{ inputs.instanceNumber }}" \
+            --name "infra-$(date +%Y%m%d%H%M%S)"
 
       - name: Show deployment outputs
-        uses: azure/cli@v2
-        with:
-          inlineScript: |
-            az deployment group show \
-              --resource-group "rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
-              --name "$(az deployment group list \
-                --resource-group 'rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}' \
-                --query '[0].name' -o tsv)" \
-              --query properties.outputs
+        run: |
+          az deployment group show \
+            --resource-group "rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}" \
+            --name "$(az deployment group list \
+              --resource-group 'rg-${{ inputs.environment }}-${{ inputs.instanceNumber }}' \
+              --query '[0].name' -o tsv)" \
+            --query properties.outputs
 
       # SQL user provisioning is handled by the Bicep deploymentScript in
       # sql-user-setup.bicep. It runs inside the VNet via a Container Instance
