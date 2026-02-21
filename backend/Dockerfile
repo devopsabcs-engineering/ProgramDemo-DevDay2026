@@ -22,7 +22,14 @@ COPY --from=build /app/target/program-demo-*.jar app.jar
 # Download Application Insights Java agent for auto-instrumentation.
 # The agent reads APPLICATIONINSIGHTS_CONNECTION_STRING from the environment
 # and auto-instruments HTTP, SQL, dependencies, logs, and exceptions.
-ADD https://github.com/microsoft/ApplicationInsights-Java/releases/download/3.6.2/applicationinsights-agent-3.6.2.jar applicationinsights-agent.jar
+# Use curl -fSL to follow redirects and fail on HTTP errors (unlike ADD
+# which silently saves a 404 HTML page as the JAR). Validate the file is
+# a real ZIP/JAR by checking the magic bytes (PK header = 50 4b).
+RUN curl -fSL --retry 3 -o applicationinsights-agent.jar \
+      "https://github.com/microsoft/ApplicationInsights-Java/releases/download/3.5.4/applicationinsights-agent-3.5.4.jar" && \
+    head -c2 applicationinsights-agent.jar | od -An -tx1 | grep -q '50 4b' && \
+    echo "Application Insights agent downloaded and validated successfully" || \
+    (echo "WARNING: Agent download failed or file is not a valid JAR — removing" && rm -f applicationinsights-agent.jar)
 
 # Expose port
 EXPOSE 8080
@@ -34,7 +41,8 @@ HEALTHCHECK --interval=30s --timeout=10s --retries=5 --start-period=120s \
 # Run as non-root
 USER appuser
 
-# JVM tuning for containers — attach the Application Insights Java agent
-ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom -javaagent:/app/applicationinsights-agent.jar"
+# JVM tuning for containers. The agent is loaded conditionally — if the JAR
+# is missing or invalid the app still starts without instrumentation.
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dserver.port=8080 -jar app.jar"]
+ENTRYPOINT ["sh", "-c", "AGENT_OPT=''; if [ -s /app/applicationinsights-agent.jar ]; then AGENT_OPT='-javaagent:/app/applicationinsights-agent.jar'; fi; java $JAVA_OPTS $AGENT_OPT -Dserver.port=8080 -jar app.jar"]
