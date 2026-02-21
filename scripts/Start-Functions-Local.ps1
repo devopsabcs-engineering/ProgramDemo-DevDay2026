@@ -80,10 +80,10 @@ if (-not $azuriteCmd) {
 }
 else {
     # Verify minimum version (3.30+) required for Azure SDK 2024-08-04 API
-    $azuriteVersion = (npm list -g azurite --depth=0 2>$null) -match 'azurite@(\d+)\.(\d+)'
-    if ($azuriteVersion -match 'azurite@(\d+)\.(\d+)') {
-        $major = [int]$Matches[1]
-        $minor = [int]$Matches[2]
+    $azuriteVersionLine = (npm list -g azurite --depth=0 2>$null) | Select-String 'azurite@(\d+)\.(\d+)'
+    if ($azuriteVersionLine -and $azuriteVersionLine.Matches.Count -gt 0) {
+        $major = [int]$azuriteVersionLine.Matches[0].Groups[1].Value
+        $minor = [int]$azuriteVersionLine.Matches[0].Groups[2].Value
         if ($major -lt 3 -or ($major -eq 3 -and $minor -lt 30)) {
             Write-Host "Azurite $major.$minor is too old. Upgrading..." -ForegroundColor Yellow
             npm install -g azurite@latest
