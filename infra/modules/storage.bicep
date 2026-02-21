@@ -30,15 +30,14 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     // Azure Policy blocks shared-key access on this subscription.
     // The Function App uses identity-based storage connections instead.
     allowSharedKeyAccess: false
+    // Public network access is disabled by Azure Policy. The Function App
+    // reaches storage via private endpoints and VNet integration.
+    publicNetworkAccess: 'Disabled'
     networkAcls: {
-      // 'AzureServices' lets the deployment script service (a trusted Azure service)
-      // access the storage account for its scratch file share, even when the
-      // storage account has no public VNet rules.
-      // Do NOT add virtualNetworkRules here — any VNet rule causes Azure to treat
-      // the firewall as "enabled" which breaks deploymentScript (BCP error
-      // DeploymentScriptStorageAccountWithServiceEndpointEnabled).
+      // 'AzureServices' lets trusted Azure platform services (e.g. deployment
+      // scripts) access the storage account through the firewall.
       bypass: 'AzureServices'
-      defaultAction: 'Allow'
+      defaultAction: 'Deny'
       virtualNetworkRules: []
     }
   }

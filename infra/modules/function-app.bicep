@@ -17,6 +17,9 @@ param userAssignedIdentityId string
 @description('Client (application) ID of the user-assigned managed identity.')
 param userAssignedIdentityClientId string
 
+@description('Resource ID of the subnet for VNet integration (outbound traffic).')
+param vnetSubnetId string = ''
+
 @description('Additional application settings to merge into the Function App configuration.')
 param additionalAppSettings array = []
 
@@ -103,6 +106,10 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
     serverFarmId: functionPlan.id
     httpsOnly: true
     keyVaultReferenceIdentity: userAssignedIdentityId
+    // Route all outbound traffic through the VNet so the Function App
+    // can reach the storage account via private endpoints.
+    virtualNetworkSubnetId: !empty(vnetSubnetId) ? vnetSubnetId : null
+    vnetRouteAllEnabled: !empty(vnetSubnetId)
     siteConfig: {
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
@@ -110,6 +117,7 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
       use32BitWorkerProcess: false
       alwaysOn: true
       appSettings: allAppSettings
+      vnetRouteAllEnabled: !empty(vnetSubnetId)
     }
   }
 }

@@ -68,6 +68,19 @@ module storageAccount './modules/storage.bicep' = {
   }
 }
 
+// Private endpoints for blob, queue, table, and file services so the
+// Function App (via VNet integration) can reach storage when public
+// network access is disabled by Azure Policy.
+module storagePrivateEndpoints './modules/storage-private-endpoints.bicep' = {
+  name: 'storagePrivateEndpoints'
+  params: {
+    config: config
+    storageAccountName: storageAccount.outputs.name
+    privateEndpointSubnetId: vnet.outputs.privateEndpointSubnetId
+    vnetId: vnet.outputs.vnetId
+  }
+}
+
 module appServicePlan './modules/app-service-plan.bicep' = {
   params: {
     config: config
@@ -235,18 +248,42 @@ module funcStorageTableContributor './modules/storage-role-assignment.bicep' = {
   }
 }
 
+// Storage Account Contributor — manage storage account properties (user MI)
+module funcStorageAccountContributor './modules/storage-role-assignment.bicep' = {
+  name: 'funcStorageAccountContributor'
+  params: {
+    storageAccountName: storageAccount.outputs.name
+    principalId: functionIdentity.outputs.principalId
+    roleDefinitionId: '17d1049b-9a84-46fb-8f53-869881c3d3ab'
+  }
+}
+
+// Storage File Data Privileged Contributor — file share access for runtime (user MI)
+module funcStorageFileContributor './modules/storage-role-assignment.bicep' = {
+  name: 'funcStorageFileContributor'
+  params: {
+    storageAccountName: storageAccount.outputs.name
+    principalId: functionIdentity.outputs.principalId
+    roleDefinitionId: '69566ab7-960f-475b-8e7c-b3118f30c6bd'
+  }
+}
+
 module functionApp './modules/function-app.bicep' = {
   name: 'functionApp'
   dependsOn: [
     funcStorageBlobOwner
     funcStorageQueueContributor
     funcStorageTableContributor
+    funcStorageAccountContributor
+    funcStorageFileContributor
+    storagePrivateEndpoints
   ]
   params: {
     config: config
     storageAccountName: storageAccount.outputs.name
     userAssignedIdentityId: functionIdentity.outputs.id
     userAssignedIdentityClientId: functionIdentity.outputs.clientId
+    vnetSubnetId: vnet.outputs.appSubnetId
     additionalAppSettings: [
       {
         name: 'DOCUMENT_INTELLIGENCE_ENDPOINT'
@@ -314,6 +351,26 @@ module funcSysMiTableContributor './modules/storage-role-assignment.bicep' = {
     storageAccountName: storageAccount.outputs.name
     principalId: functionApp.outputs.principalId
     roleDefinitionId: '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3'
+  }
+}
+
+// Storage Account Contributor (system MI)
+module funcSysMiAccountContributor './modules/storage-role-assignment.bicep' = {
+  name: 'funcSysMiAccountContributor'
+  params: {
+    storageAccountName: storageAccount.outputs.name
+    principalId: functionApp.outputs.principalId
+    roleDefinitionId: '17d1049b-9a84-46fb-8f53-869881c3d3ab'
+  }
+}
+
+// Storage File Data Privileged Contributor (system MI)
+module funcSysMiFileContributor './modules/storage-role-assignment.bicep' = {
+  name: 'funcSysMiFileContributor'
+  params: {
+    storageAccountName: storageAccount.outputs.name
+    principalId: functionApp.outputs.principalId
+    roleDefinitionId: '69566ab7-960f-475b-8e7c-b3118f30c6bd'
   }
 }
 
