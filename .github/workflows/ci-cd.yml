@@ -385,16 +385,18 @@ jobs:
           APP_NAME="app-${{ env.PREFIX }}-api-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
           URL="https://${APP_NAME}.azurewebsites.net/api/programs"
           echo "Checking $URL ..."
-          for i in {1..15}; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL" --max-time 30)
+          echo "Waiting 60s for container cold start..."
+          sleep 60
+          for i in $(seq 1 20); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL" --max-time 30 || true)
             if [ "$STATUS" = "200" ]; then
-              echo "Health check passed (HTTP $STATUS)"
+              echo "Health check passed (HTTP $STATUS) on attempt $i"
               exit 0
             fi
-            echo "Attempt $i: HTTP $STATUS — retrying in 20s..."
-            sleep 20
+            echo "Attempt $i/20: HTTP $STATUS — retrying in 30s..."
+            sleep 30
           done
-          echo "Health check failed after 15 attempts."
+          echo "Health check failed after 20 attempts (~11 min)."
           exit 1
 
   deploy-frontend:
@@ -445,16 +447,16 @@ jobs:
           APP_NAME="app-${{ env.PREFIX }}-web-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
           URL="https://${APP_NAME}.azurewebsites.net"
           echo "Checking $URL ..."
-          for i in {1..10}; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+          for i in $(seq 1 15); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL" --max-time 30 || true)
             if [ "$STATUS" = "200" ]; then
-              echo "Health check passed (HTTP $STATUS)"
+              echo "Health check passed (HTTP $STATUS) on attempt $i"
               exit 0
             fi
-            echo "Attempt $i: HTTP $STATUS — retrying in 15s..."
-            sleep 15
+            echo "Attempt $i/15: HTTP $STATUS — retrying in 20s..."
+            sleep 20
           done
-          echo "Health check failed after 10 attempts."
+          echo "Health check failed after 15 attempts (~6 min)."
           exit 1
 
   deploy-functions:
