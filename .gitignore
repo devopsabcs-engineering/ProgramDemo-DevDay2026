@@ -9,6 +9,9 @@
 # Azure Functions local settings (contain secrets; use local.settings.json.example for templates)
 functions/**/local.settings.json
 
+# Azurite local storage emulator data
+.azurite/
+
 # User-specific files
 *.rsuser
 *.suo
