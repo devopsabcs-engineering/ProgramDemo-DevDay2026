@@ -203,8 +203,13 @@ module frontendApp './modules/web-app.bicep' = {
         value: '~20'
       }
       {
-        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-        value: appInsights.outputs.connectionString
+        // The frontend is a static SPA served by PM2. Application Insights
+        // telemetry is handled by the browser SDK (@microsoft/applicationinsights-web)
+        // with VITE_APPINSIGHTS_CONNECTION_STRING baked at build time.
+        // Server-side codeless auto-instrumentation (IPA) must be disabled to
+        // prevent it from interfering with PM2 and causing a container crash loop.
+        name: 'ApplicationInsightsAgent_EXTENSION_VERSION'
+        value: '~0'
       }
     ]
   }
