@@ -141,7 +141,9 @@
       "reviewComments": "Review Comments",
       "alreadyReviewedTitle": "Review Complete",
       "alreadyReviewedMessage": "This program has already been reviewed. Current status: {{status}}.",
+      "downloadDocument": "Download Document",
       "aiSummaryHeading": "AI Document Summary",
+      "aiSummaryPending": "The AI summary is being generated. This page will update automatically when it is ready.",
       "aiSummaryDisclaimer": "This summary was generated automatically by AI. Verify important details in the attached document."
     },
     "form": {

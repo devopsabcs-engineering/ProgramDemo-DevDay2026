@@ -91,3 +91,16 @@ export async function reviewProgram(
   );
   return response.data;
 }
+
+/**
+ * Returns the URL for downloading the supporting document for a program.
+ *
+ * The backend proxies the blob download using managed identity so the
+ * storage account can remain private (publicNetworkAccess: Disabled).
+ *
+ * @param id - The program ID
+ * @returns The URL to the backend document proxy endpoint
+ */
+export function getDocumentDownloadUrl(id: number): string {
+  return `${API_BASE_URL}/programs/${id}/document`;
+}

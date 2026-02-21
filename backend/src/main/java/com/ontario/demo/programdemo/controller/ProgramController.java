@@ -6,9 +6,12 @@ import com.ontario.demo.programdemo.dto.ReviewRequest;
 import com.ontario.demo.programdemo.dto.SummaryCallbackDto;
 import com.ontario.demo.programdemo.service.BlobStorageService;
 import com.ontario.demo.programdemo.service.ProgramService;
+import com.azure.storage.blob.models.BlobProperties;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 
 /**
@@ -106,6 +110,56 @@ public class ProgramController {
     public ResponseEntity<ProgramResponse> getProgramById(@PathVariable Long id) {
         ProgramResponse response = programService.getProgramById(id);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Downloads the supporting document for a program submission.
+     *
+     * <p>Proxies the blob content through the backend using managed identity,
+     * so the storage account can keep {@code publicNetworkAccess: Disabled}.
+     * The blob is streamed to the client with appropriate content-type and
+     * content-disposition headers for browser download.</p>
+     *
+     * @param id the program ID
+     * @return the document as a downloadable stream, or HTTP 404 if no document exists
+     */
+    @GetMapping("/{id}/document")
+    public ResponseEntity<Resource> downloadDocument(@PathVariable Long id) {
+        ProgramResponse program = programService.getProgramById(id);
+        if (program.getDocumentUrl() == null || program.getDocumentUrl().isBlank()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        try {
+            BlobProperties properties = blobStorageService.getBlobProperties(program.getDocumentUrl());
+            Resource resource = blobStorageService.downloadDocument(program.getDocumentUrl());
+
+            String filename = extractFilename(program.getDocumentUrl());
+            String contentType = properties.getContentType() != null
+                    ? properties.getContentType()
+                    : "application/pdf";
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .contentLength(properties.getBlobSize())
+                    .body(resource);
+        } catch (Exception e) {
+            log.error("Failed to download document for program {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Extracts the filename from a full blob URL.
+     *
+     * @param blobUrl the full blob URL
+     * @return the filename portion of the URL
+     */
+    private String extractFilename(String blobUrl) {
+        String path = URI.create(blobUrl).getPath();
+        int lastSlash = path.lastIndexOf('/');
+        return lastSlash >= 0 ? path.substring(lastSlash + 1) : path;
     }
 
     /**

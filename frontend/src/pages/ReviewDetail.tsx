@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams, Link } from 'react-router-dom';
-import { getProgramById } from '../services/api';
+import { getProgramById, getDocumentDownloadUrl } from '../services/api';
 import type { ProgramResponse } from '../types';
 import { ReviewForm } from '../components/review/ReviewForm';
 
@@ -51,6 +51,37 @@ export function ReviewDetail() {
   /** Whether the program can still be reviewed. */
   const canReview =
     program?.status === 'SUBMITTED' || program?.status === 'UNDER_REVIEW';
+
+  /**
+   * Auto-poll for AI summary when the program has a document but no summary yet.
+   * Checks every 15 seconds for up to 5 minutes (20 attempts).
+   */
+  useEffect(() => {
+    if (!program || !program.documentUrl || program.aiSummary) return;
+
+    let attempts = 0;
+    const maxAttempts = 20;
+    const intervalMs = 15_000;
+
+    const timer = setInterval(async () => {
+      attempts += 1;
+      if (attempts > maxAttempts) {
+        clearInterval(timer);
+        return;
+      }
+      try {
+        const updated = await getProgramById(program.id);
+        if (updated.aiSummary) {
+          setProgram(updated);
+          clearInterval(timer);
+        }
+      } catch {
+        // Ignore polling errors silently
+      }
+    }, intervalMs);
+
+    return () => clearInterval(timer);
+  }, [program?.id, program?.documentUrl, program?.aiSummary]);
 
   /** Called after a successful review submission to refresh the data. */
   const handleReviewComplete = () => {
@@ -133,11 +164,11 @@ export function ReviewDetail() {
                 <dt>{t('review.detail.documentUrl')}</dt>
                 <dd>
                   <a
-                    href={program.documentUrl}
+                    href={getDocumentDownloadUrl(program.id)}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    {program.documentUrl}
+                    {t('review.detail.downloadDocument')}
                   </a>
                 </dd>
               </>
@@ -177,6 +208,20 @@ export function ReviewDetail() {
           <div className="ontario-callout">
             <p className="ontario-callout__body">{program.aiSummary}</p>
             <p className="ontario-hint">{t('review.detail.aiSummaryDisclaimer')}</p>
+          </div>
+        </section>
+      )}
+
+      {/* Summary pending indicator — shown when a document exists but summary is not yet ready */}
+      {program.documentUrl && !program.aiSummary && (
+        <section aria-labelledby="ai-summary-pending-heading">
+          <h2 id="ai-summary-pending-heading" className="ontario-h3">
+            {t('review.detail.aiSummaryHeading')}
+          </h2>
+          <div className="ontario-callout">
+            <p className="ontario-callout__body" role="status" aria-live="polite">
+              {t('review.detail.aiSummaryPending')}
+            </p>
           </div>
         </section>
       )}

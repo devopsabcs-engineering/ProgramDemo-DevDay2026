@@ -2,6 +2,7 @@ using Azure;
 using Azure.AI.FormRecognizer.DocumentAnalysis;
 using Azure.AI.OpenAI;
 using Azure.Identity;
+using Azure.Storage.Blobs;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask;
 using Microsoft.DurableTask.Client;
@@ -85,7 +86,8 @@ public class PdfSummarizerFunction
     // ── Activity 1: Document Intelligence ────────────────────────────────────
     /// <summary>
     /// Extracts plain text from the PDF using Azure AI Document Intelligence.
-    /// Uses <c>DefaultAzureCredential</c> — Managed Identity in Azure, developer credentials locally.
+    /// Downloads the blob via managed identity (storage has publicNetworkAccess: Disabled)
+    /// and passes the bytes to Document Intelligence instead of a URL.
     /// </summary>
     [Function(nameof(AnalyzePdfActivity))]
     public async Task<string> AnalyzePdfActivity(
@@ -95,11 +97,20 @@ public class PdfSummarizerFunction
         var logger = context.GetLogger(nameof(AnalyzePdfActivity));
         var endpoint = new Uri(Environment.GetEnvironmentVariable("DOCUMENT_INTELLIGENCE_ENDPOINT")!);
         var credential = new DefaultAzureCredential();
-        var client = new DocumentAnalysisClient(endpoint, credential);
 
-        logger.LogInformation("Analyzing PDF at {BlobUrl}", blobUrl);
-        AnalyzeDocumentOperation operation = await client.AnalyzeDocumentFromUriAsync(
-            WaitUntil.Completed, "prebuilt-read", new Uri(blobUrl));
+        // Download the blob using managed identity — the storage account
+        // has publicNetworkAccess: Disabled and only allows VNet/PE access.
+        logger.LogInformation("Downloading blob from {BlobUrl} via managed identity", blobUrl);
+        var blobUri = new Uri(blobUrl);
+        var blobClient = new BlobClient(blobUri, credential);
+        using var blobStream = new MemoryStream();
+        await blobClient.DownloadToAsync(blobStream);
+        blobStream.Position = 0;
+
+        logger.LogInformation("Analyzing PDF ({ByteCount} bytes) with Document Intelligence", blobStream.Length);
+        var docClient = new DocumentAnalysisClient(endpoint, credential);
+        AnalyzeDocumentOperation operation = await docClient.AnalyzeDocumentAsync(
+            WaitUntil.Completed, "prebuilt-read", blobStream);
 
         AnalyzeResult result = operation.Value;
         return string.Join("\n", result.Pages
