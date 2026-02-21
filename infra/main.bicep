@@ -445,6 +445,7 @@ module funcSysMiFileContributor './modules/storage-role-assignment.bicep' = {
 /* ─── RBAC: Cognitive Services User (Document Intelligence) ─── */
 // Role ID: a97b65f3-24c7-4388-baec-2e87135dc908
 
+// User-assigned MI — used by AzureWebJobsStorage and Durable Functions host
 module functionDocIntelRole './modules/cognitive-services-role-assignment.bicep' = {
   name: 'functionDocIntelRole'
   params: {
@@ -455,14 +456,38 @@ module functionDocIntelRole './modules/cognitive-services-role-assignment.bicep'
   }
 }
 
+// System-assigned MI — DefaultAzureCredential() in application code uses this
+// identity when no explicit client ID hint is passed to the credential constructor.
+module functionDocIntelRoleSysMi './modules/cognitive-services-role-assignment.bicep' = {
+  name: 'functionDocIntelRoleSysMi'
+  params: {
+    accountName: documentIntelligence.outputs.name
+    principalId: functionApp.outputs.principalId
+    // Cognitive Services User
+    roleDefinitionId: 'a97b65f3-24c7-4388-baec-2e87135dc908'
+  }
+}
+
 /* ─── RBAC: Cognitive Services OpenAI User (Azure OpenAI) ─── */
 // Role ID: 5e0bd9bd-7b93-4f28-af87-19fc36ad61bd
 
+// User-assigned MI
 module functionOpenAiRole './modules/cognitive-services-role-assignment.bicep' = {
   name: 'functionOpenAiRole'
   params: {
     accountName: openAi.outputs.name
     principalId: functionIdentity.outputs.principalId
+    // Cognitive Services OpenAI User
+    roleDefinitionId: '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
+  }
+}
+
+// System-assigned MI — DefaultAzureCredential() in application code
+module functionOpenAiRoleSysMi './modules/cognitive-services-role-assignment.bicep' = {
+  name: 'functionOpenAiRoleSysMi'
+  params: {
+    accountName: openAi.outputs.name
+    principalId: functionApp.outputs.principalId
     // Cognitive Services OpenAI User
     roleDefinitionId: '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
   }
