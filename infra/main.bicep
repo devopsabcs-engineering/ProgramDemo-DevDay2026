@@ -111,6 +111,15 @@ module acrPrivateEndpoint './modules/acr-private-endpoint.bicep' = {
   }
 }
 
+/* ─── Modules: Observability ─── */
+
+module appInsights './modules/app-insights.bicep' = {
+  name: 'appInsights'
+  params: {
+    config: config
+  }
+}
+
 /* ─── Modules: Web Applications ─── */
 
 // Grant the SQL admin MI the AcrPull role so the App Service can pull images
@@ -169,6 +178,10 @@ module backendApp './modules/web-app.bicep' = {
         name: 'AZURE_STORAGE_BLOB_SERVICE_URI'
         value: storageAccount.outputs.blobServiceUri
       }
+      {
+        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        value: appInsights.outputs.connectionString
+      }
     ]
   }
 }
@@ -184,6 +197,10 @@ module frontendApp './modules/web-app.bicep' = {
       {
         name: 'WEBSITE_NODE_DEFAULT_VERSION'
         value: '~20'
+      }
+      {
+        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        value: appInsights.outputs.connectionString
       }
     ]
   }
@@ -339,6 +356,10 @@ module functionApp './modules/function-app.bicep' = {
         name: 'API_BASE_URL'
         value: 'https://${backendApp.outputs.defaultHostName}'
       }
+      {
+        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        value: appInsights.outputs.connectionString
+      }
     ]
   }
 }
@@ -469,3 +490,6 @@ output acrLoginServer string = containerRegistry.outputs.loginServer
 
 @description('The name of the container registry.')
 output acrName string = containerRegistry.outputs.name
+
+@description('The Application Insights connection string.')
+output appInsightsConnectionString string = appInsights.outputs.connectionString

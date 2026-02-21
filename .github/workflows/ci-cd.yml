@@ -278,6 +278,7 @@ jobs:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     permissions:
       contents: read
+      id-token: write
     timeout-minutes: 15
     defaults:
       run:
@@ -296,9 +297,31 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get Application Insights connection string
+        id: appinsights
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            APPI_NAME="appi-${{ env.PREFIX }}-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
+            CS=$(az monitor app-insights component show \
+              --app "$APPI_NAME" \
+              --resource-group "${{ env.RESOURCE_GROUP }}" \
+              --query "connectionString" \
+              --output tsv 2>/dev/null || echo "")
+            echo "connection_string=$CS" >> "$GITHUB_OUTPUT"
+
       - name: Build
         env:
           VITE_API_URL: https://app-${{ env.PREFIX }}-api-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}.azurewebsites.net
+          VITE_APPINSIGHTS_CONNECTION_STRING: ${{ steps.appinsights.outputs.connection_string }}
+          VITE_APP_VERSION: ${{ needs.tag.outputs.new_version }}
         run: npm run build
 
       - name: Upload frontend artifact

@@ -19,6 +19,11 @@ WORKDIR /app
 # Copy the built JAR
 COPY --from=build /app/target/program-demo-*.jar app.jar
 
+# Download Application Insights Java agent for auto-instrumentation.
+# The agent reads APPLICATIONINSIGHTS_CONNECTION_STRING from the environment
+# and auto-instruments HTTP, SQL, dependencies, logs, and exceptions.
+ADD https://github.com/microsoft/ApplicationInsights-Java/releases/download/3.6.2/applicationinsights-agent-3.6.2.jar applicationinsights-agent.jar
+
 # Expose port
 EXPOSE 8080
 
@@ -29,7 +34,7 @@ HEALTHCHECK --interval=30s --timeout=10s --retries=5 --start-period=120s \
 # Run as non-root
 USER appuser
 
-# JVM tuning for containers
-ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"
+# JVM tuning for containers — attach the Application Insights Java agent
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom -javaagent:/app/applicationinsights-agent.jar"
 
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dserver.port=8080 -jar app.jar"]
