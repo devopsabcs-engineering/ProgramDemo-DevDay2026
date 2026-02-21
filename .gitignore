@@ -12,6 +12,7 @@ functions/**/local.settings.json
 # Azure Functions build/publish artifacts
 functions/**/deploy-pkg/
 functions/**/deploy.zip
+functions/**/publish-test/
 
 # Azurite local storage emulator data
 .azurite/
