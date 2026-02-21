@@ -455,3 +455,56 @@ jobs:
           done
           echo "Health check failed after 10 attempts."
           exit 1
+
+  deploy-functions:
+    name: Deploy Azure Functions
+    runs-on: ubuntu-latest
+    needs: [build-functions, tag]
+    permissions:
+      contents: read
+      id-token: write
+    timeout-minutes: 15
+    environment: ${{ inputs.environment || 'dev' }}-${{ inputs.instanceNumber || vars.INSTANCE_NUMBER }}
+    steps:
+      - name: Download functions artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: functions-publish-${{ needs.tag.outputs.new_version }}
+          path: functions-artifact
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Create deployment package
+        run: |
+          cd functions-artifact
+          zip -r ../functions.zip .
+
+      - name: Deploy to Function App
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            FUNC_NAME="func-${{ env.PREFIX }}-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
+
+            az functionapp deployment source config-zip \
+              --resource-group "${{ env.RESOURCE_GROUP }}" \
+              --name "$FUNC_NAME" \
+              --src functions.zip \
+              --only-show-errors
+
+      - name: Verify function registration
+        uses: azure/cli@v2
+        with:
+          inlineScript: |
+            FUNC_NAME="func-${{ env.PREFIX }}-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
+            echo "Waiting for functions to register..."
+            sleep 30
+            az functionapp function list \
+              --resource-group "${{ env.RESOURCE_GROUP }}" \
+              --name "$FUNC_NAME" \
+              --query "[].name" \
+              --output table
