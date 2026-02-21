@@ -49,6 +49,10 @@ var baseAppSettings = [
     name: 'WEBSITE_RUN_FROM_PACKAGE'
     value: '1'
   }
+  {
+    name: 'WEBSITE_USE_PLACEHOLDER_DOTNETISOLATED'
+    value: '1'
+  }
 ]
 
 var allAppSettings = concat(baseAppSettings, additionalAppSettings)
@@ -84,6 +88,7 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
       netFrameworkVersion: 'v8.0'
+      use32BitWorkerProcess: false
       alwaysOn: true
       appSettings: allAppSettings
     }

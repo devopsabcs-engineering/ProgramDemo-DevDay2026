@@ -10,7 +10,10 @@
   },
   "extensions": {
     "durableTask": {
-      "hubName": "PdfSummarizerHub"
+      "hubName": "PdfSummarizerHub",
+      "storageProvider": {
+        "connectionStringName": "AzureWebJobsStorage"
+      }
     }
   }
 }
