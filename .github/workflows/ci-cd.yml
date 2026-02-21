@@ -339,6 +339,7 @@ jobs:
         with:
           name: functions-publish-${{ needs.tag.outputs.new_version }}
           path: functions/PdfSummarizer/publish
+          include-hidden-files: true
           retention-days: 7
 
   deploy-backend:
