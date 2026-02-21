@@ -40,7 +40,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # PRs: group by workflow + ref so new commits cancel stale runs.
+  # Push to main / dispatch: unique group per run so they never cancel each other.
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
