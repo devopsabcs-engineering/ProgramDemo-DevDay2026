@@ -138,4 +138,4 @@ output serverName string = sqlServer.name
 output databaseName string = sqlDatabase.name
 
 @description('The JDBC connection string for the database (Azure AD auth).')
-output jdbcConnectionString string = 'jdbc:sqlserver://${sqlServer.properties.fullyQualifiedDomainName}:1433;database=${sqlDatabase.name};encrypt=true;trustServerCertificate=true;hostNameInCertificate=*.database.windows.net;loginTimeout=30;authentication=ActiveDirectoryManagedIdentity;msiClientId=${appMsiClientId};'
+output jdbcConnectionString string = 'jdbc:sqlserver://${sqlServer.properties.fullyQualifiedDomainName}:1433;database=${sqlDatabase.name};encrypt=true;trustServerCertificate=true;hostNameInCertificate=*.database.windows.net;loginTimeout=60;authentication=ActiveDirectoryManagedIdentity;msiClientId=${appMsiClientId};connectRetryCount=3;connectRetryInterval=10;'

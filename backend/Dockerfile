@@ -23,7 +23,7 @@ COPY --from=build /app/target/program-demo-*.jar app.jar
 EXPOSE 8080
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=60s \
+HEALTHCHECK --interval=30s --timeout=10s --retries=5 --start-period=120s \
   CMD curl -f http://localhost:8080/api/programs || exit 1
 
 # Run as non-root

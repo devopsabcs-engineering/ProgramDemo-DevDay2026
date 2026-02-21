@@ -24,8 +24,13 @@ resource documentIntelligence 'Microsoft.CognitiveServices/accounts@2024-04-01-p
   }
   properties: {
     customSubDomainName: 'docintel-${resourceToken}'
-    publicNetworkAccess: 'Enabled'
+    // Public access disabled — Azure Policy enforces this.
+    // The Function App reaches Document Intelligence via private endpoint + VNet integration.
+    publicNetworkAccess: 'Disabled'
     disableLocalAuth: true
+    networkAcls: {
+      defaultAction: 'Deny'
+    }
   }
 }
 

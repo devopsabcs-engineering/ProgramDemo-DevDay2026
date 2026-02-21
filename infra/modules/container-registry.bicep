@@ -8,13 +8,13 @@ import { DeploymentConfig } from '../types.bicep'
 @description('Common deployment configuration.')
 param config DeploymentConfig
 
-@description('SKU for the container registry.')
+@description('SKU for the container registry. Premium is required for private endpoint support.')
 @allowed([
   'Basic'
   'Standard'
   'Premium'
 ])
-param skuName string = 'Basic'
+param skuName string = 'Premium'
 
 /* ─── Variables ─── */
 
@@ -32,7 +32,12 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-11-01-pr
   }
   properties: {
     adminUserEnabled: true
+    // Public network access must remain Enabled for GitHub Actions CI/CD
+    // to build and push images via `az acr build`. The ACR firewall uses
+    // the default 'Allow' action. If Azure Policy requires Disabled,
+    // switch to a self-hosted runner inside the VNet or use ACR import.
     publicNetworkAccess: 'Enabled'
+    networkRuleBypassOptions: 'AzureServices'
   }
 }
 

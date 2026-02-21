@@ -30,8 +30,13 @@ resource openAi 'Microsoft.CognitiveServices/accounts@2024-04-01-preview' = {
   }
   properties: {
     customSubDomainName: 'oai-${resourceToken}'
-    publicNetworkAccess: 'Enabled'
+    // Public access disabled — Azure Policy enforces this.
+    // The Function App reaches Azure OpenAI via private endpoint + VNet integration.
+    publicNetworkAccess: 'Disabled'
     disableLocalAuth: true
+    networkAcls: {
+      defaultAction: 'Deny'
+    }
   }
 }
 

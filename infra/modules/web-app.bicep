@@ -93,13 +93,18 @@ resource webApp 'Microsoft.Web/sites@2024-04-01' = {
     httpsOnly: true
     // Wire VNet integration when a subnet ID is supplied
     virtualNetworkSubnetId: !empty(vnetSubnetId) ? vnetSubnetId : null
+    // Route all outbound traffic through VNet so private endpoint DNS resolves
+    // correctly. Must be at the properties level (not just in siteConfig) for
+    // API version 2024-04-01 to ensure DNS queries for SQL, Storage, etc.
+    // resolve to private endpoint IPs instead of public IPs.
+    vnetRouteAllEnabled: !empty(vnetSubnetId)
     siteConfig: {
       linuxFxVersion: linuxFxVersion
       appCommandLine: startupCommand
       alwaysOn: true
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
-      // Route all outbound traffic through VNet so private endpoint DNS resolves correctly
+      // Also set in siteConfig for backward compatibility
       vnetRouteAllEnabled: !empty(vnetSubnetId)
       // Use MI-based ACR pull when a client ID is provided — no registry password needed
       acrUseManagedIdentityCreds: !empty(acrUserManagedIdentityClientId)

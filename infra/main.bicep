@@ -92,7 +92,22 @@ module appServicePlan './modules/app-service-plan.bicep' = {
 module containerRegistry './modules/container-registry.bicep' = {
   params: {
     config: config
-    skuName: 'Basic'
+    // Premium SKU required for private endpoint support.
+    // Azure Policy may deny public network access on lower SKUs.
+    skuName: 'Premium'
+  }
+}
+
+// Private endpoint for ACR so the App Service can pull container images
+// via VNet integration when public network access is restricted.
+module acrPrivateEndpoint './modules/acr-private-endpoint.bicep' = {
+  name: 'acrPrivateEndpoint'
+  params: {
+    config: config
+    registryName: containerRegistry.outputs.name
+    registryId: containerRegistry.outputs.id
+    privateEndpointSubnetId: vnet.outputs.privateEndpointSubnetId
+    vnetId: vnet.outputs.vnetId
   }
 }
 
@@ -110,6 +125,12 @@ module acrPullRole './modules/acr-role-assignment.bicep' = {
 }
 
 module backendApp './modules/web-app.bicep' = {
+  // Ensure all private endpoints are deployed before the app starts,
+  // so DNS resolves to private IPs and outbound connections succeed.
+  dependsOn: [
+    storagePrivateEndpoints
+    acrPrivateEndpoint
+  ]
   params: {
     config: config
     appSuffix: 'api'
@@ -204,6 +225,22 @@ module openAi './modules/openai.bicep' = {
   }
 }
 
+// Private endpoints for Document Intelligence and Azure OpenAI so the
+// Function App (via VNet integration) can reach them when Azure Policy
+// denies public network access on Cognitive Services accounts.
+module cognitivePrivateEndpoints './modules/cognitive-private-endpoints.bicep' = {
+  name: 'cognitivePrivateEndpoints'
+  params: {
+    config: config
+    docIntelligenceName: documentIntelligence.outputs.name
+    docIntelligenceId: documentIntelligence.outputs.id
+    openAiName: openAi.outputs.name
+    openAiId: openAi.outputs.id
+    privateEndpointSubnetId: vnet.outputs.privateEndpointSubnetId
+    vnetId: vnet.outputs.vnetId
+  }
+}
+
 /* ─── Modules: Workflow and Notifications ─── */
 
 // User-assigned managed identity for the Function App.
@@ -277,6 +314,7 @@ module functionApp './modules/function-app.bicep' = {
     funcStorageAccountContributor
     funcStorageFileContributor
     storagePrivateEndpoints
+    cognitivePrivateEndpoints
   ]
   params: {
     config: config

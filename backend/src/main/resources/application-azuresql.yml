@@ -13,10 +13,15 @@
 
 spring:
   datasource:
-    url: jdbc:sqlserver://sql-ops-demo-dev-123.database.windows.net:1433;database=programdb;encrypt=true;trustServerCertificate=true;hostNameInCertificate=*.database.windows.net;loginTimeout=30;authentication=ActiveDirectoryDefault;
+    url: jdbc:sqlserver://sql-ops-demo-dev-123.database.windows.net:1433;database=programdb;encrypt=true;trustServerCertificate=true;hostNameInCertificate=*.database.windows.net;loginTimeout=60;authentication=ActiveDirectoryDefault;connectRetryCount=3;connectRetryInterval=10;
     username:
     password:
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    hikari:
+      initialization-fail-timeout: 120000
+      connection-timeout: 60000
+      maximum-pool-size: 10
+      minimum-idle: 2
 
   jpa:
     hibernate:
@@ -32,6 +37,8 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
     validate-on-migrate: true
+    connect-retries: 3
+    connect-retries-interval: 10
 
 server:
   port: 8080
