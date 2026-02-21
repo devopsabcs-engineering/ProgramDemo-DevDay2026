@@ -126,6 +126,24 @@ else {
     }
 }
 
+# --- Stop any previous Functions host that may lock DLLs ---
+$staleHosts = Get-Process -Name 'func' -ErrorAction SilentlyContinue
+if (-not $staleHosts) {
+    # func host runs as dotnet; find processes with the output path in their command line
+    $staleHosts = Get-Process -Name 'dotnet' -ErrorAction SilentlyContinue |
+        Where-Object {
+            try { $_.MainModule.FileName -and $_.CommandLine -like '*PdfSummarizer*' } catch { $false }
+        }
+}
+if ($staleHosts) {
+    Write-Host "Stopping previous Functions host process(es)..." -ForegroundColor Yellow
+    $staleHosts | ForEach-Object {
+        Write-Host "  Killing PID $($_.Id) ($($_.ProcessName))" -ForegroundColor Yellow
+        Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
+    }
+    Start-Sleep -Seconds 2
+}
+
 # --- Build Functions project ---
 if (-not $SkipBuild) {
     Write-Host "`nBuilding Functions project..." -ForegroundColor Green
