@@ -12,7 +12,7 @@ param instanceNumber = '125'
 /* ─── App Service Parameters ─── */
 
 param appServicePlanConfig = {
-  skuName: 'B1'
+  skuName: 'P1v3'
   capacity: 1
 }
 
