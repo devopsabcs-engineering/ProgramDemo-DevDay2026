@@ -46,11 +46,32 @@ public class PdfSummarizerFunction
         logger.LogInformation(
             "Blob trigger fired for program {ProgramId}, blob {Name}", programId, name);
 
-        // Construct the blob URL from the storage endpoint and blob path.
-        var storageEndpoint = Environment.GetEnvironmentVariable("AzureWebJobsStorage__accountName");
-        var blobUrl = storageEndpoint != null
-            ? $"https://{storageEndpoint}.blob.core.windows.net/program-documents/{programId}/{name}"
-            : $"program-documents/{programId}/{name}";
+        // Construct the blob URL from the storage blob service URI and blob path.
+        // Identity-based storage uses AzureWebJobsStorage__blobServiceUri (not __accountName).
+        var blobServiceUri = Environment.GetEnvironmentVariable("AzureWebJobsStorage__blobServiceUri");
+        string blobUrl;
+        if (!string.IsNullOrEmpty(blobServiceUri))
+        {
+            // Trim trailing slash and append container/path
+            blobUrl = $"{blobServiceUri.TrimEnd('/')}/program-documents/{programId}/{name}";
+        }
+        else
+        {
+            // Fallback for local dev with connection-string-based storage (Azurite)
+            var connString = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
+            if (!string.IsNullOrEmpty(connString) && connString != "UseDevelopmentStorage=true")
+            {
+                var accountName = connString.Split(';')
+                    .FirstOrDefault(s => s.StartsWith("AccountName=", StringComparison.OrdinalIgnoreCase))
+                    ?.Split('=', 2)[1];
+                blobUrl = $"https://{accountName}.blob.core.windows.net/program-documents/{programId}/{name}";
+            }
+            else
+            {
+                // Azurite local dev
+                blobUrl = $"http://127.0.0.1:10000/devstoreaccount1/program-documents/{programId}/{name}";
+            }
+        }
 
         string instanceId = await starter.ScheduleNewOrchestrationInstanceAsync(
             nameof(OrchestrateDocumentProcessing),
