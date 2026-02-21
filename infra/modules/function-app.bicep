@@ -64,6 +64,14 @@ var baseAppSettings = [
     name: 'WEBSITE_USE_PLACEHOLDER_DOTNETISOLATED'
     value: '1'
   }
+  {
+    // Dedicated plans support file-based secrets. This avoids the
+    // BlobStorageSecretsRepository which requires the host runtime's
+    // internal credential pipeline to authenticate against blob storage
+    // — problematic when allowSharedKeyAccess is disabled.
+    name: 'AzureWebJobsSecretStorageType'
+    value: 'files'
+  }
 ]
 
 var allAppSettings = concat(baseAppSettings, additionalAppSettings)
