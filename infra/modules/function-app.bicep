@@ -1,5 +1,5 @@
 metadata name = 'Function App'
-metadata description = 'Deploys an Azure Function App on a Consumption plan for Durable Functions workflow orchestration. Uses identity-based storage connections (no shared keys) to comply with Azure Policy.'
+metadata description = 'Deploys an Azure Function App on an Elastic Premium plan for Durable Functions workflow orchestration. Uses identity-based storage connections (no shared keys) to comply with Azure Policy.'
 
 import { DeploymentConfig } from '../types.bicep'
 
@@ -39,17 +39,17 @@ var baseAppSettings = [
     value: userAssignedIdentityClientId
   }
   {
-    // ARM requires this setting on Consumption plans even when using
-    // identity-based connections.  Set to empty string so the platform
-    // does not attempt shared-key access.
-    name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
-    value: ''
+    // Identity-based content share connection for Elastic Premium plan.
+    name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING__accountName'
+    value: storageAccountName
   }
   {
-    // Skip the platform-level shared-key validation of the content share
-    // connection — we authenticate via managed identity instead.
-    name: 'WEBSITE_SKIP_CONTENTSHARE_VALIDATION'
-    value: '1'
+    name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING__credential'
+    value: 'managedidentity'
+  }
+  {
+    name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING__clientId'
+    value: userAssignedIdentityClientId
   }
   {
     name: 'WEBSITE_CONTENTSHARE'
@@ -73,14 +73,17 @@ var allAppSettings = concat(baseAppSettings, additionalAppSettings)
 
 /* ─── Resources ─── */
 
-resource consumptionPlan 'Microsoft.Web/serverfarms@2024-04-01' = {
+resource functionPlan 'Microsoft.Web/serverfarms@2024-04-01' = {
   name: 'asp-${config.prefix}-func-${config.environment}-${config.instanceNumber}'
   location: config.location
   tags: config.tags
-  kind: 'functionapp'
+  kind: 'elastic'
   sku: {
-    name: 'Y1'
-    tier: 'Dynamic'
+    name: 'EP1'
+    tier: 'ElasticPremium'
+  }
+  properties: {
+    maximumElasticWorkerCount: 2
   }
 }
 
@@ -96,7 +99,7 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
     }
   }
   properties: {
-    serverFarmId: consumptionPlan.id
+    serverFarmId: functionPlan.id
     httpsOnly: true
     keyVaultReferenceIdentity: userAssignedIdentityId
     siteConfig: {
