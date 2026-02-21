@@ -4,23 +4,23 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Target environment'
+        description: "Target environment"
         required: true
-        default: 'dev'
+        default: "dev"
         type: choice
         options:
           - dev
           - test
           - prod
       instanceNumber:
-        description: 'Instance number for resource naming (overrides vars.INSTANCE_NUMBER)'
+        description: "Instance number for resource naming (overrides vars.INSTANCE_NUMBER)"
         required: true
-        default: '123'  # UI hint only — GitHub does not support expressions here. Keep in sync with vars.INSTANCE_NUMBER.
+        default: "125" # UI hint only — GitHub does not support expressions here. Keep in sync with vars.INSTANCE_NUMBER.
         type: string
       resourceGroupLocation:
-        description: 'Azure region for the resource group'
+        description: "Azure region for the resource group"
         required: true
-        default: 'canadacentral'
+        default: "canadacentral"
         type: string
 
 permissions: {}

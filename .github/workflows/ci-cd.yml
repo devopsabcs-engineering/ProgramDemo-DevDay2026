@@ -4,37 +4,37 @@ on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Target environment for CD'
+        description: "Target environment for CD"
         required: true
-        default: 'dev'
+        default: "dev"
         type: choice
         options:
           - dev
           - test
           - prod
       instanceNumber:
-        description: 'Instance number for resource naming (overrides vars.INSTANCE_NUMBER)'
+        description: "Instance number for resource naming (overrides vars.INSTANCE_NUMBER)"
         required: true
-        default: '123'  # UI hint only — GitHub does not support expressions here. Keep in sync with vars.INSTANCE_NUMBER.
+        default: "125" # UI hint only — GitHub does not support expressions here. Keep in sync with vars.INSTANCE_NUMBER.
         type: string
   push:
     branches:
       - main
     paths:
-      - 'backend/**'
-      - 'frontend/**'
-      - 'functions/**'
-      - 'database/**'
-      - '.github/workflows/ci-cd.yml'
+      - "backend/**"
+      - "frontend/**"
+      - "functions/**"
+      - "database/**"
+      - ".github/workflows/ci-cd.yml"
   pull_request:
     branches:
       - main
     paths:
-      - 'backend/**'
-      - 'frontend/**'
-      - 'functions/**'
-      - 'database/**'
-      - '.github/workflows/ci-cd.yml'
+      - "backend/**"
+      - "frontend/**"
+      - "functions/**"
+      - "database/**"
+      - ".github/workflows/ci-cd.yml"
 
 permissions:
   contents: read
@@ -77,7 +77,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: "21"
           cache: maven
 
       - name: Build and test
@@ -109,7 +109,7 @@ jobs:
       - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -151,14 +151,14 @@ jobs:
       - name: Set up .NET 8
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: "8.0.x"
 
       - name: Build
         run: dotnet build --configuration Release
 
-# ─────────────────────────────────────────────
-# Stage 2: Tag — push: bump + create; dispatch: reuse latest
-# ─────────────────────────────────────────────
+  # ─────────────────────────────────────────────
+  # Stage 2: Tag — push: bump + create; dispatch: reuse latest
+  # ─────────────────────────────────────────────
   tag:
     name: Create or Reuse Version Tag
     runs-on: ubuntu-latest
@@ -228,9 +228,9 @@ jobs:
             -f "ref=refs/tags/${VERSION}" \
             -f "sha=${TAG_SHA}"
 
-# ─────────────────────────────────────────────
-# Stage 3: CD — runs after tagging
-# ─────────────────────────────────────────────
+  # ─────────────────────────────────────────────
+  # Stage 3: CD — runs after tagging
+  # ─────────────────────────────────────────────
   build-and-push-backend:
     name: Build and Push Backend Container
     runs-on: ubuntu-latest
@@ -292,7 +292,7 @@ jobs:
       - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -351,7 +351,7 @@ jobs:
       - name: Set up .NET 8
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: "8.0.x"
 
       - name: Publish
         run: |
@@ -450,7 +450,7 @@ jobs:
       - name: Deploy to App Service
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'app-${{ env.PREFIX }}-web-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}'
+          app-name: "app-${{ env.PREFIX }}-web-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
           package: frontend-artifact
 
       - name: Configure startup and restart
