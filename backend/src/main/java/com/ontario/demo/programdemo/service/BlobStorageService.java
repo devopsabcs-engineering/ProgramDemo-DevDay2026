@@ -17,29 +17,60 @@ import java.io.InputStream;
 import java.net.URI;
 
 /**
- * Service for uploading program documents to Azure Blob Storage.
+ * Service for uploading and downloading program documents to/from Azure Blob Storage.
  *
  * <p>Uses {@code DefaultAzureCredential} for authentication — Managed Identity in Azure,
- * developer CLI credentials locally. No connection strings or keys are used.</p>
+ * developer CLI credentials locally. When the blob service URI points to
+ * {@code localhost} (Azurite emulator), the well-known Azurite connection string
+ * is used instead so that local development works without Azure credentials.</p>
  */
 @Service
 public class BlobStorageService {
 
     private static final String CONTAINER_NAME = "program-documents";
 
+    /** Well-known connection string for the Azurite local storage emulator. */
+    private static final String AZURITE_CONNECTION_STRING =
+            "DefaultEndpointsProtocol=http;"
+            + "AccountName=devstoreaccount1;"
+            + "AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsu"
+            + "Fq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;"
+            + "BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;";
+
     private final BlobServiceClient client;
 
     /**
      * Constructs the service and initialises the Blob Storage client.
      *
+     * <p>When the endpoint contains {@code localhost} or {@code 127.0.0.1}
+     * (i.e. Azurite is in use), the client is built with the Azurite
+     * connection string. Otherwise, {@code DefaultAzureCredential} is used.</p>
+     *
      * @param blobServiceUri the blob service endpoint URI (injected from configuration)
      */
     public BlobStorageService(
             @Value("${azure.storage.blob-service-uri}") String blobServiceUri) {
-        this.client = new BlobServiceClientBuilder()
-                .endpoint(blobServiceUri)
-                .credential(new DefaultAzureCredentialBuilder().build())
-                .buildClient();
+        if (isLocalEmulator(blobServiceUri)) {
+            this.client = new BlobServiceClientBuilder()
+                    .connectionString(AZURITE_CONNECTION_STRING)
+                    .buildClient();
+            // Auto-create the container in Azurite (no-op if it already exists).
+            this.client.getBlobContainerClient(CONTAINER_NAME).createIfNotExists();
+        } else {
+            this.client = new BlobServiceClientBuilder()
+                    .endpoint(blobServiceUri)
+                    .credential(new DefaultAzureCredentialBuilder().build())
+                    .buildClient();
+        }
+    }
+
+    /**
+     * Returns {@code true} if the blob service URI points to a local emulator
+     * (Azurite) rather than a real Azure Storage account.
+     */
+    private static boolean isLocalEmulator(String uri) {
+        String lower = uri.toLowerCase();
+        return lower.contains("localhost") || lower.contains("127.0.0.1");
     }
 
     /**
