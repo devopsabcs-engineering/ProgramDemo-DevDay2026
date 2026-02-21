@@ -1,5 +1,6 @@
 import axios from 'axios';
 import type { ProgramRequest, ProgramResponse, ReviewRequest } from '../types';
+import { trackException } from './appInsights';
 
 /**
  * Base URL for the backend API.
@@ -18,6 +19,21 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+// Log API errors to Application Insights for end-to-end observability.
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const url = error.config?.url ?? 'unknown';
+    const method = (error.config?.method ?? 'unknown').toUpperCase();
+    const status = error.response?.status?.toString() ?? 'network_error';
+    trackException(
+      error instanceof Error ? error : new Error(String(error)),
+      { url, method, status, component: 'api-client' }
+    );
+    return Promise.reject(error);
+  }
+);
 
 /**
  * Submits a new program request using multipart/form-data.

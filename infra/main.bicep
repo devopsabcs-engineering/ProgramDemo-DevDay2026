@@ -182,6 +182,10 @@ module backendApp './modules/web-app.bicep' = {
         name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
         value: appInsights.outputs.connectionString
       }
+      {
+        name: 'WEBSITES_CONTAINER_START_TIME_LIMIT'
+        value: '600'
+      }
     ]
   }
 }

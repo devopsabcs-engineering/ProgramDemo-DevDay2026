@@ -36,4 +36,20 @@ if (connectionString) {
     import.meta.env.VITE_APP_VERSION || '0.0.0';
 }
 
+/**
+ * Track an exception in Application Insights.
+ * No-ops gracefully when App Insights is not initialized.
+ */
+export function trackException(error: Error, properties?: Record<string, string>): void {
+  appInsights?.trackException({ exception: error }, properties);
+}
+
+/**
+ * Track a custom event in Application Insights.
+ * No-ops gracefully when App Insights is not initialized.
+ */
+export function trackEvent(name: string, properties?: Record<string, string>): void {
+  appInsights?.trackEvent({ name }, properties);
+}
+
 export { appInsights };

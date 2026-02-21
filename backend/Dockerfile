@@ -19,6 +19,11 @@ WORKDIR /app
 # Copy the built JAR
 COPY --from=build /app/target/program-demo-*.jar app.jar
 
+# Copy Application Insights agent config to the working directory so the
+# agent picks it up (it looks in cwd, not inside the JAR). This sets
+# sampling to 100%, cloud role name, and log level.
+COPY src/main/resources/applicationinsights.json applicationinsights.json
+
 # Download Application Insights Java agent for auto-instrumentation.
 # The agent reads APPLICATIONINSIGHTS_CONNECTION_STRING from the environment
 # and auto-instruments HTTP, SQL, dependencies, logs, and exceptions.
@@ -35,7 +40,7 @@ RUN curl -fSL --retry 3 -o applicationinsights-agent.jar \
 EXPOSE 8080
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --retries=5 --start-period=120s \
+HEALTHCHECK --interval=30s --timeout=10s --retries=5 --start-period=300s \
   CMD curl -f http://localhost:8080/api/programs || exit 1
 
 # Run as non-root
@@ -43,6 +48,8 @@ USER appuser
 
 # JVM tuning for containers. The agent is loaded conditionally — if the JAR
 # is missing or invalid the app still starts without instrumentation.
-ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"
+# -Xshare:off suppresses the harmless CDS warning "Sharing is only supported
+# for boot loader classes" caused by the -javaagent bootstrap classpath append.
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom -Xshare:off"
 
 ENTRYPOINT ["sh", "-c", "AGENT_OPT=''; if [ -s /app/applicationinsights-agent.jar ]; then AGENT_OPT='-javaagent:/app/applicationinsights-agent.jar'; fi; java $JAVA_OPTS $AGENT_OPT -Dserver.port=8080 -jar app.jar"]
