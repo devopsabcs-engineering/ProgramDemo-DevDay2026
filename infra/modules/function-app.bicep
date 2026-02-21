@@ -1,5 +1,5 @@
 metadata name = 'Function App'
-metadata description = 'Deploys an Azure Function App on an Elastic Premium plan for Durable Functions workflow orchestration. Uses identity-based storage connections (no shared keys) to comply with Azure Policy.'
+metadata description = 'Deploys an Azure Function App on a Dedicated (Basic) plan for Durable Functions workflow orchestration. Uses identity-based storage connections (no shared keys) to comply with Azure Policy. A Dedicated plan avoids the WEBSITE_CONTENTAZUREFILECONNECTIONSTRING requirement that Consumption and Elastic Premium plans impose.'
 
 import { DeploymentConfig } from '../types.bicep'
 
@@ -17,14 +17,13 @@ param userAssignedIdentityId string
 @description('Client (application) ID of the user-assigned managed identity.')
 param userAssignedIdentityClientId string
 
-@description('Name of the pre-created file share for function content.')
-param contentShareName string
-
 @description('Additional application settings to merge into the Function App configuration.')
 param additionalAppSettings array = []
 
 /* ─── Variables ─── */
 
+// Dedicated plans use the local file system for function code — no
+// WEBSITE_CONTENTAZUREFILECONNECTIONSTRING or WEBSITE_CONTENTSHARE needed.
 var baseAppSettings = [
   {
     name: 'AzureWebJobsStorage__accountName'
@@ -37,23 +36,6 @@ var baseAppSettings = [
   {
     name: 'AzureWebJobsStorage__clientId'
     value: userAssignedIdentityClientId
-  }
-  {
-    // Identity-based content share connection for Elastic Premium plan.
-    name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING__accountName'
-    value: storageAccountName
-  }
-  {
-    name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING__credential'
-    value: 'managedidentity'
-  }
-  {
-    name: 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING__clientId'
-    value: userAssignedIdentityClientId
-  }
-  {
-    name: 'WEBSITE_CONTENTSHARE'
-    value: contentShareName
   }
   {
     name: 'FUNCTIONS_EXTENSION_VERSION'
@@ -77,13 +59,9 @@ resource functionPlan 'Microsoft.Web/serverfarms@2024-04-01' = {
   name: 'asp-${config.prefix}-func-${config.environment}-${config.instanceNumber}'
   location: config.location
   tags: config.tags
-  kind: 'elastic'
   sku: {
-    name: 'EP1'
-    tier: 'ElasticPremium'
-  }
-  properties: {
-    maximumElasticWorkerCount: 2
+    name: 'B1'
+    tier: 'Basic'
   }
 }
 
@@ -106,6 +84,7 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
       ftpsState: 'Disabled'
       minTlsVersion: '1.2'
       netFrameworkVersion: 'v8.0'
+      alwaysOn: true
       appSettings: allAppSettings
     }
   }

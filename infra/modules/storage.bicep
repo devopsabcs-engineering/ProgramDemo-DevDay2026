@@ -57,25 +57,6 @@ resource programDocumentsContainer 'Microsoft.Storage/storageAccounts/blobServic
   }
 }
 
-/* ─── File Share for Function App content (pre-created so identity-based access works) ─── */
-
-resource fileService 'Microsoft.Storage/storageAccounts/fileServices@2023-05-01' = {
-  parent: storageAccount
-  name: 'default'
-}
-
-@description('Name of the Function App content share. Must match the WEBSITE_CONTENTSHARE app setting.')
-param functionContentShareName string = ''
-
-resource functionContentShare 'Microsoft.Storage/storageAccounts/fileServices/shares@2023-05-01' = if (!empty(functionContentShareName)) {
-  parent: fileService
-  name: functionContentShareName
-  properties: {
-    shareQuota: 5120
-    enabledProtocols: 'SMB'
-  }
-}
-
 /* ─── Outputs ─── */
 
 @description('The resource ID of the storage account.')

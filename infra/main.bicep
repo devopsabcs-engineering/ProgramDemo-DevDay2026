@@ -36,11 +36,6 @@ var config = {
   tags: tags
 }
 
-// Name of the pre-created Azure Files share for Function App content.
-// Must be created before the Function App because identity-based storage
-// connections cannot auto-create file shares the way key-based ones do.
-var functionContentShareName = 'func-${prefix}-${environment}-${instanceNumber}'
-
 /* ─── App Service Parameters ─── */
 
 @description('App Service Plan SKU configuration.')
@@ -70,7 +65,6 @@ module sqlAdminIdentity './modules/sql-admin-identity.bicep' = {
 module storageAccount './modules/storage.bicep' = {
   params: {
     config: config
-    functionContentShareName: functionContentShareName
   }
 }
 
@@ -221,16 +215,6 @@ module funcStorageBlobOwner './modules/storage-role-assignment.bicep' = {
   }
 }
 
-// Storage Account Contributor — file share management
-module funcStorageAccountContributor './modules/storage-role-assignment.bicep' = {
-  name: 'funcStorageAccountContributor'
-  params: {
-    storageAccountName: storageAccount.outputs.name
-    principalId: functionIdentity.outputs.principalId
-    roleDefinitionId: '17d1049b-9a84-46fb-8f53-869881c3d3ab'
-  }
-}
-
 // Storage Queue Data Contributor — internal queue messaging
 module funcStorageQueueContributor './modules/storage-role-assignment.bicep' = {
   name: 'funcStorageQueueContributor'
@@ -238,16 +222,6 @@ module funcStorageQueueContributor './modules/storage-role-assignment.bicep' = {
     storageAccountName: storageAccount.outputs.name
     principalId: functionIdentity.outputs.principalId
     roleDefinitionId: '974c5e8b-45b9-4653-ba55-5f855dd0fb88'
-  }
-}
-
-// Storage File Data Privileged Contributor — file share content read/write
-module funcStorageFileContributor './modules/storage-role-assignment.bicep' = {
-  name: 'funcStorageFileContributor'
-  params: {
-    storageAccountName: storageAccount.outputs.name
-    principalId: functionIdentity.outputs.principalId
-    roleDefinitionId: '69566ab7-960f-475b-8e7c-b3118f30c6bd'
   }
 }
 
@@ -265,9 +239,7 @@ module functionApp './modules/function-app.bicep' = {
   name: 'functionApp'
   dependsOn: [
     funcStorageBlobOwner
-    funcStorageAccountContributor
     funcStorageQueueContributor
-    funcStorageFileContributor
     funcStorageTableContributor
   ]
   params: {
@@ -275,7 +247,6 @@ module functionApp './modules/function-app.bicep' = {
     storageAccountName: storageAccount.outputs.name
     userAssignedIdentityId: functionIdentity.outputs.id
     userAssignedIdentityClientId: functionIdentity.outputs.clientId
-    contentShareName: functionContentShareName
     additionalAppSettings: [
       {
         name: 'DOCUMENT_INTELLIGENCE_ENDPOINT'
