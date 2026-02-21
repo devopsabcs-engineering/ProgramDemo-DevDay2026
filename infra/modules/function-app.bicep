@@ -56,7 +56,7 @@ var allAppSettings = concat(baseAppSettings, additionalAppSettings)
 /* ─── Resources ─── */
 
 resource functionPlan 'Microsoft.Web/serverfarms@2024-04-01' = {
-  name: 'asp-${config.prefix}-func-${config.environment}-${config.instanceNumber}'
+  name: 'asp-${config.prefix}-func-ded-${config.environment}-${config.instanceNumber}'
   location: config.location
   tags: config.tags
   sku: {
