@@ -24,10 +24,21 @@ param additionalAppSettings array = []
 
 // Dedicated plans use the local file system for function code — no
 // WEBSITE_CONTENTAZUREFILECONNECTIONSTRING or WEBSITE_CONTENTSHARE needed.
+// Use explicit service URIs for identity-based AzureWebJobsStorage instead of
+// the __accountName shortcut — the explicit format is more reliable when
+// allowSharedKeyAccess is disabled on the storage account.
 var baseAppSettings = [
   {
-    name: 'AzureWebJobsStorage__accountName'
-    value: storageAccountName
+    name: 'AzureWebJobsStorage__blobServiceUri'
+    value: 'https://${storageAccountName}.blob.${az.environment().suffixes.storage}'
+  }
+  {
+    name: 'AzureWebJobsStorage__queueServiceUri'
+    value: 'https://${storageAccountName}.queue.${az.environment().suffixes.storage}'
+  }
+  {
+    name: 'AzureWebJobsStorage__tableServiceUri'
+    value: 'https://${storageAccountName}.table.${az.environment().suffixes.storage}'
   }
   {
     name: 'AzureWebJobsStorage__credential'

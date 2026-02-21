@@ -9,6 +9,10 @@
 # Azure Functions local settings (contain secrets; use local.settings.json.example for templates)
 functions/**/local.settings.json
 
+# Azure Functions build/publish artifacts
+functions/**/deploy-pkg/
+functions/**/deploy.zip
+
 # Azurite local storage emulator data
 .azurite/
 

@@ -284,6 +284,39 @@ module backendBlobRole './modules/storage-role-assignment.bicep' = {
 // Function App storage roles are assigned above (before the Function App module)
 // using the user-assigned managed identity to avoid the chicken-and-egg problem.
 
+// The system-assigned identity also needs storage roles for internal host
+// operations like BlobStorageSecretsRepository and the AzureWebJobsStorage
+// health check, which may use the system MI even when __clientId is set.
+// Storage Blob Data Owner (system MI)
+module funcSysMiBlobOwner './modules/storage-role-assignment.bicep' = {
+  name: 'funcSysMiBlobOwner'
+  params: {
+    storageAccountName: storageAccount.outputs.name
+    principalId: functionApp.outputs.principalId
+    roleDefinitionId: 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
+  }
+}
+
+// Storage Queue Data Contributor (system MI)
+module funcSysMiQueueContributor './modules/storage-role-assignment.bicep' = {
+  name: 'funcSysMiQueueContributor'
+  params: {
+    storageAccountName: storageAccount.outputs.name
+    principalId: functionApp.outputs.principalId
+    roleDefinitionId: '974c5e8b-45b9-4653-ba55-5f855dd0fb88'
+  }
+}
+
+// Storage Table Data Contributor (system MI)
+module funcSysMiTableContributor './modules/storage-role-assignment.bicep' = {
+  name: 'funcSysMiTableContributor'
+  params: {
+    storageAccountName: storageAccount.outputs.name
+    principalId: functionApp.outputs.principalId
+    roleDefinitionId: '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3'
+  }
+}
+
 /* ─── RBAC: Cognitive Services User (Document Intelligence) ─── */
 // Role ID: a97b65f3-24c7-4388-baec-2e87135dc908
 
