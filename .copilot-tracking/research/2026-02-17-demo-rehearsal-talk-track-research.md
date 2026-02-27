@@ -253,25 +253,22 @@ Add `program_budget` field end-to-end: migration → entity → DTO → API → 
 > ### 🖥️ CLI SPOTLIGHT — Optional Aside (min 14 | ⏰ ~10:44 AM)
 > **[Backup/awareness beat — use if time permits and audience energy is high. Skip if running tight.]**
 >
-> **🎙️ HAMMAD:** > "Before we dive into the database, I want to flag something for everyone in this room — especially those of you who spend more time in a terminal than in an IDE. GitHub Copilot CLI just went Generally Available last week. And this matters, because Copilot in the IDE is powerful, but it's constrained to whatever files you have open. The CLI is different — it's not limited by IDE context windows, it can work across your entire filesystem, and it lives natively in your terminal workflow. Emmanuel, want to show them what `gh copilot` looks like?"
+> **🎙️ HAMMAD:** > "Before we dive into the database, I want to flag something that just went Generally Available last week — and it changes what it means to have Copilot as a developer. GitHub Copilot CLI is a full AI coding agent that lives in your terminal. Not a command generator. Not a lookup tool. A full agent — the same intelligence you have in VS Code, but without ever opening an editor. You type `copilot`, you describe what you want to accomplish, and it reads your codebase, runs commands, makes file changes, creates pull requests — all from your shell. Emmanuel, fire it up."
 >
-> **💻 EMMANUEL:** > "Sure. We've got the `gh` CLI installed and authenticated. There are two core commands: `gh copilot suggest` — which generates shell commands from natural language — and `gh copilot explain` — which takes any command and tells you exactly what it does."
+> **💻 EMMANUEL:** > "So you just run `copilot` to start an interactive session. It knows our project because it reads the directory you launch it from. Watch this."
 >
 > **Demo (EMMANUEL in terminal):**
 > ```bash
-> # Ask Copilot to suggest a shell command
-> gh copilot suggest "list all Java files in the backend that contain the word Entity"
+> # Start an interactive Copilot CLI session from the project root
+> copilot
 >
-> # Copilot suggests:
-> find backend/src -name "*.java" | xargs grep -l "@Entity"
->
-> # Then explain a command you didn't write
-> gh copilot explain "find backend/src -name '*.java' | xargs grep -l '@Entity'"
+> # In the interactive session, prompt:
+> # "Show me all the Java files in the backend that will need @Entity annotations,
+> #  and summarize what each one will represent based on our data dictionary"
 > ```
+> *Copilot reads the project structure and data-dictionary.md, then responds with a structured summary — without Emmanuel opening a single file.*
 >
-> **🎙️ HAMMAD:** > "That explain feature is gold for onboarding. A new developer joins your team, they're looking at a complex shell pipeline from three years ago — they just ask Copilot to explain it. No tribal knowledge required."
->
-> **🎙️ HAMMAD:** > "We'll come back to the CLI when we get to our DevOps act — that's where it really shines. For now, Emmanuel's going to keep building in the IDE."
+> **🎙️ HAMMAD:** > "That's the shift. It's not autocomplete. It's not a snippet suggester. It's an agent that understands your entire project — and it just went GA. You can also run it non-interactively: `copilot -p "your task here"` and it completes the task and exits. We'll use that in our DevOps act to have it create a pull request for us. But for now — back to Emmanuel building in the IDE."
 > ---
 
 ---
@@ -337,19 +334,19 @@ Add `program_budget` field end-to-end: migration → entity → DTO → API → 
 
   > ---
   > ### 🖥️ CLI SPOTLIGHT — Backup Option for API Testing (min 43)
-  > **[Use this instead of typing the curl command manually — great audience moment if you want to show off suggest live.]**
+  > **[Use this instead of typing the curl command manually — great audience moment to show Copilot CLI in action.]**
   >
-  > **🎙️ HAMMAD:** > "Emmanuel, you've got an API running. But do you actually remember the curl syntax for a JSON POST off the top of your head?"
+  > **🎙️ HAMMAD:** > "Emmanuel, you've got a live API. Let's do something different. Instead of typing curl by hand — let's hand this to Copilot CLI and see what a terminal-native developer workflow looks like."
   >
-  > **💻 EMMANUEL:** > "I don't have to."
+  > **💻 EMMANUEL:** > "So I can run this as a one-liner with the `-p` flag."
   >
   > **Demo (EMMANUEL in terminal):**
   > ```bash
-  > gh copilot suggest "send a POST request to localhost:8080/api/programs with a JSON body containing programName, programDescription, and programTypeId"
+  > copilot -p "Test the POST /api/programs endpoint running on localhost:8080. Send a valid request with a realistic programName, programDescription, and programTypeId, then show me the response."
   > ```
-  > *Copilot generates the full curl command, including headers — Emmanuel runs it directly.*
+  > *Copilot CLI constructs and executes the curl command, displays the 201 Created response, and summarizes the result — all without Emmanuel writing a single line.*
   >
-  > **🎙️ HAMMAD:** > "Notice what just happened. Emmanuel didn't Google 'curl POST JSON'. He didn't look at documentation. He described what he wanted in plain English, and Copilot CLI generated the exact command. That's the `gh copilot suggest` feature — and it works for any shell command, any tool, any platform."
+  > **🎙️ HAMMAD:** > "That's Copilot CLI. It didn't give Emmanuel a command to copy-paste. It ran the test itself, interpreted the response, and reported back. That's what an agentic workflow looks like in the terminal — and it just went GA last week."
   > ---
 - (min 44) Add GET /api/programs (Story 1816) and GET /api/programs/{id} (Story 1819) — inline completions
 - (min 46) Add PUT /api/programs/{id}/review (Story 1820) — show ReviewRequest DTO
