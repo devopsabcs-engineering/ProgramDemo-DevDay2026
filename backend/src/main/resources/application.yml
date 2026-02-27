@@ -8,6 +8,19 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME:sa}
     password: ${SPRING_DATASOURCE_PASSWORD:}
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    hikari:
+      # Allow pool initialization to retry for up to 120 seconds on cold start.
+      # Covers transient Azure SQL + Private Endpoint + Managed Identity failures.
+      initialization-fail-timeout: 120000
+      connection-timeout: 60000
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+  # Multipart file upload configuration (max 50 MB for PDF documents)
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 55MB
 
   # JPA / Hibernate
   jpa:
@@ -25,6 +38,15 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
     validate-on-migrate: true
+    # Retry transient connection failures during startup (e.g., private endpoint cold start)
+    connect-retries: 3
+    connect-retries-interval: 10
+
+azure:
+  storage:
+    # Blob service URI — overridden by AZURE_STORAGE_BLOB_SERVICE_URI env var in Azure App Service.
+    # Default points to Azurite local emulator for development without Azure credentials.
+    blob-service-uri: ${AZURE_STORAGE_BLOB_SERVICE_URI:http://localhost:10000/devstoreaccount1}
 
 server:
   port: ${SERVER_PORT:8080}

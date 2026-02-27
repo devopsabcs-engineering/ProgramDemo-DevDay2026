@@ -1,0 +1,16 @@
+{
+  "role": {
+    "name": "ops-program-demo-api"
+  },
+  "sampling": {
+    "percentage": 100
+  },
+  "instrumentation": {
+    "logging": {
+      "level": "INFO"
+    }
+  },
+  "selfDiagnostics": {
+    "level": "warn"
+  }
+}

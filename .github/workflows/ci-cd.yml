@@ -1,0 +1,526 @@
+name: CI/CD
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment for CD"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - test
+          - prod
+      instanceNumber:
+        description: "Instance number for resource naming (overrides vars.INSTANCE_NUMBER)"
+        required: true
+        default: "125" # UI hint only — GitHub does not support expressions here. Keep in sync with vars.INSTANCE_NUMBER.
+        type: string
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "functions/**"
+      - "database/**"
+      - ".github/workflows/ci-cd.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "functions/**"
+      - "database/**"
+      - ".github/workflows/ci-cd.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  # PRs: group by workflow + ref so new commits cancel stale runs.
+  # Push to main / dispatch: unique group per run so they never cancel each other.
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  PREFIX: ops-demo
+  # Prefer the workflow_dispatch input; fall back to the repo variable vars.INSTANCE_NUMBER.
+  # To change the default for push/PR-triggered runs, update the repository variable instead of editing this file.
+  INSTANCE_NUMBER: ${{ inputs.instanceNumber || vars.INSTANCE_NUMBER }}
+  ENVIRONMENT: ${{ inputs.environment || 'dev' }}
+  ACR_NAME: acropsdemo${{ inputs.environment || 'dev' }}${{ inputs.instanceNumber || vars.INSTANCE_NUMBER }}
+  RESOURCE_GROUP: rg-${{ inputs.environment || 'dev' }}-${{ inputs.instanceNumber || vars.INSTANCE_NUMBER }}
+  IMAGE_NAME: program-demo-api
+
+# ─────────────────────────────────────────────
+# Stage 1: CI — runs on every push / PR
+# ─────────────────────────────────────────────
+jobs:
+  backend-ci:
+    name: Backend Build & Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Build and test
+        run: mvn clean verify
+
+      - name: Publish backend test results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Backend Tests
+          path: backend/target/surefire-reports/TEST-*.xml
+          reporter: java-junit
+          fail-on-error: false
+
+  frontend-ci:
+    name: Frontend Build & Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npx vitest run --reporter=verbose --reporter=junit --outputFile.junit=test-results/junit.xml
+
+      - name: Publish frontend test results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Frontend Tests
+          path: frontend/test-results/junit.xml
+          reporter: java-junit
+          fail-on-error: false
+
+      - name: Build
+        run: npm run build
+
+  functions-ci:
+    name: Azure Functions Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: functions/PdfSummarizer
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Build
+        run: dotnet build --configuration Release
+
+  # ─────────────────────────────────────────────
+  # Stage 2: Tag — push: bump + create; dispatch: reuse latest
+  # ─────────────────────────────────────────────
+  tag:
+    name: Create or Reuse Version Tag
+    runs-on: ubuntu-latest
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && !failure() && !cancelled()
+    needs: [backend-ci, frontend-ci, functions-ci]
+    permissions:
+      contents: write
+    timeout-minutes: 10
+    outputs:
+      new_version: ${{ steps.resolve.outputs.new_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest tag
+        id: latest_tag
+        run: |
+          TAG=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+          if [ -z "$TAG" ]; then
+            echo "version=0.0.0" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve version
+        id: resolve
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # Reuse the latest existing tag — no new increment on manual re-deploy
+            VERSION="${{ steps.latest_tag.outputs.version }}"
+            if [ "$VERSION" = "0.0.0" ]; then
+              VERSION="0.0.1"
+            fi
+            echo "new_version=${VERSION}" >> "$GITHUB_OUTPUT"
+            echo "Reusing existing tag: v${VERSION}"
+          else
+            # push to main: bump patch and create a new tag
+            IFS='.' read -r major minor patch <<< "${{ steps.latest_tag.outputs.version }}"
+            NEW_PATCH=$((patch + 1))
+            NEW_VERSION="${major}.${minor}.${NEW_PATCH}"
+            echo "new_version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
+            echo "New version: v${NEW_VERSION}"
+          fi
+
+      - name: Create and push tag
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="v${{ steps.resolve.outputs.new_version }}"
+          SHA=$(git rev-parse HEAD)
+          # Use the GitHub API to create the tag so the push is not blocked
+          # by the workflows permission check that git-push enforces when
+          # the tagged commit touches .github/workflows/ files.
+          TAG_SHA=$(gh api "repos/${{ github.repository }}/git/tags" \
+            --method POST \
+            -f tag="${VERSION}" \
+            -f message="${VERSION}" \
+            -f object="${SHA}" \
+            -f type="commit" \
+            --jq '.sha')
+
+          gh api "repos/${{ github.repository }}/git/refs" \
+            --method POST \
+            -f "ref=refs/tags/${VERSION}" \
+            -f "sha=${TAG_SHA}"
+
+  # ─────────────────────────────────────────────
+  # Stage 3: CD — runs after tagging
+  # ─────────────────────────────────────────────
+  build-and-push-backend:
+    name: Build and Push Backend Container
+    runs-on: ubuntu-latest
+    needs: tag
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+      id-token: write
+    timeout-minutes: 20
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set image metadata
+        id: meta
+        run: |
+          VERSION="v${{ needs.tag.outputs.new_version }}"
+          TAG="${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${VERSION}"
+          echo "tags=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Image tag: $TAG"
+
+      - name: Build and push Docker image via ACR Tasks
+        run: |
+          VERSION="v${{ needs.tag.outputs.new_version }}"
+          az acr build \
+            --registry "${{ env.ACR_NAME }}" \
+            --image "${{ env.IMAGE_NAME }}:${VERSION}" \
+            --image "${{ env.IMAGE_NAME }}:latest" \
+            --file backend/Dockerfile \
+            backend/
+
+  build-frontend:
+    name: Build Frontend for Deployment
+    runs-on: ubuntu-latest
+    needs: tag
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+      id-token: write
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get Application Insights connection string
+        id: appinsights
+        run: |
+          APPI_NAME="appi-${{ env.PREFIX }}-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
+          CS=$(az monitor app-insights component show \
+            --app "$APPI_NAME" \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --query "connectionString" \
+            --output tsv 2>/dev/null || echo "")
+          echo "connection_string=$CS" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        env:
+          VITE_API_URL: https://app-${{ env.PREFIX }}-api-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}.azurewebsites.net
+          VITE_APPINSIGHTS_CONNECTION_STRING: ${{ steps.appinsights.outputs.connection_string }}
+          VITE_APP_VERSION: ${{ needs.tag.outputs.new_version }}
+        run: npm run build
+
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist-${{ needs.tag.outputs.new_version }}
+          path: frontend/dist
+          retention-days: 7
+
+  build-functions:
+    name: Publish Azure Functions
+    runs-on: ubuntu-latest
+    needs: tag
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: read
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: functions/PdfSummarizer
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Publish
+        run: |
+          dotnet publish PdfSummarizer.csproj \
+            --configuration Release \
+            --output publish
+
+      - name: Upload functions artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: functions-publish-${{ needs.tag.outputs.new_version }}
+          path: functions/PdfSummarizer/publish
+          include-hidden-files: true
+          retention-days: 7
+
+  deploy-backend:
+    name: Deploy Backend Container
+    runs-on: ubuntu-latest
+    needs: [build-and-push-backend, tag]
+    permissions:
+      contents: read
+      id-token: write
+    timeout-minutes: 15
+    environment: ${{ inputs.environment || 'dev' }}-${{ inputs.instanceNumber || vars.INSTANCE_NUMBER }}
+    steps:
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy container to App Service
+        run: |
+          APP_NAME="app-${{ env.PREFIX }}-api-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
+          IMAGE="${{ needs.build-and-push-backend.outputs.image-tag }}"
+
+          # Update only the image tag — do not touch registry auth settings.
+          # ACR pull uses managed identity (acrUseManagedIdentityCreds set by Bicep).
+          az webapp config set \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --name "$APP_NAME" \
+            --linux-fx-version "DOCKER|${IMAGE}" \
+            --startup-file "" \
+            --only-show-errors
+
+          az webapp restart \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --name "$APP_NAME" \
+            --only-show-errors
+
+      - name: Health check — backend
+        run: |
+          APP_NAME="app-${{ env.PREFIX }}-api-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
+          URL="https://${APP_NAME}.azurewebsites.net/api/programs"
+          echo "Checking $URL ..."
+          echo "Waiting 60s for container cold start..."
+          sleep 60
+          for i in $(seq 1 20); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL" --max-time 30 || true)
+            if [ "$STATUS" = "200" ]; then
+              echo "Health check passed (HTTP $STATUS) on attempt $i"
+              exit 0
+            fi
+            echo "Attempt $i/20: HTTP $STATUS — retrying in 30s..."
+            sleep 30
+          done
+          echo "Health check failed after 20 attempts (~11 min)."
+          exit 1
+
+  deploy-frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    needs: [build-frontend, tag]
+    permissions:
+      contents: read
+      id-token: write
+    timeout-minutes: 15
+    environment: ${{ inputs.environment || 'dev' }}-${{ inputs.instanceNumber || vars.INSTANCE_NUMBER }}
+    steps:
+      - name: Download frontend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist-${{ needs.tag.outputs.new_version }}
+          path: frontend-artifact
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: "app-${{ env.PREFIX }}-web-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
+          package: frontend-artifact
+
+      - name: Configure startup and restart
+        run: |
+          az webapp config set \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --name "app-${{ env.PREFIX }}-web-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}" \
+            --startup-file "pm2 serve /home/site/wwwroot --no-daemon --spa" \
+            --only-show-errors
+          az webapp restart \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --name "app-${{ env.PREFIX }}-web-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}" \
+            --only-show-errors
+
+      - name: Health check — frontend
+        run: |
+          APP_NAME="app-${{ env.PREFIX }}-web-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
+          URL="https://${APP_NAME}.azurewebsites.net"
+          echo "Checking $URL ..."
+          for i in $(seq 1 15); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL" --max-time 30 || true)
+            if [ "$STATUS" = "200" ]; then
+              echo "Health check passed (HTTP $STATUS) on attempt $i"
+              exit 0
+            fi
+            echo "Attempt $i/15: HTTP $STATUS — retrying in 20s..."
+            sleep 20
+          done
+          echo "Health check failed after 15 attempts (~6 min)."
+          exit 1
+
+  deploy-functions:
+    name: Deploy Azure Functions
+    runs-on: ubuntu-latest
+    needs: [build-functions, tag]
+    permissions:
+      contents: read
+      id-token: write
+    timeout-minutes: 15
+    environment: ${{ inputs.environment || 'dev' }}-${{ inputs.instanceNumber || vars.INSTANCE_NUMBER }}
+    steps:
+      - name: Download functions artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: functions-publish-${{ needs.tag.outputs.new_version }}
+          path: functions-artifact
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Create deployment package
+        run: |
+          cd functions-artifact
+          zip -r ../functions.zip .
+
+      - name: Deploy to Function App
+        run: |
+          FUNC_NAME="func-${{ env.PREFIX }}-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
+
+          az functionapp deployment source config-zip \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --name "$FUNC_NAME" \
+            --src functions.zip \
+            --only-show-errors
+
+      - name: Verify function registration
+        run: |
+          FUNC_NAME="func-${{ env.PREFIX }}-${{ env.ENVIRONMENT }}-${{ env.INSTANCE_NUMBER }}"
+          echo "Waiting for functions to register..."
+          sleep 30
+          az functionapp function list \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --name "$FUNC_NAME" \
+            --query "[].name" \
+            --output table

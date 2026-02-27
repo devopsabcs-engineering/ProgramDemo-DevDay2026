@@ -35,8 +35,10 @@ export function SubmitProgram() {
     programDescription: '',
     programTypeId: 0,
     submittedBy: '',
-    documentUrl: '',
+    budget: null,
   });
+
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -61,6 +63,13 @@ export function SubmitProgram() {
     ) {
       newErrors.submittedBy = t('validation.emailInvalid');
     }
+    if (
+      formData.budget !== null &&
+      formData.budget !== undefined &&
+      (isNaN(Number(formData.budget)) || Number(formData.budget) < 0)
+    ) {
+      newErrors.budget = t('submit.budgetInvalid');
+    }
 
     return newErrors;
   };
@@ -73,7 +82,14 @@ export function SubmitProgram() {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'programTypeId' ? Number(value) : value,
+      [name]:
+        name === 'programTypeId'
+          ? Number(value)
+          : name === 'budget'
+          ? value === ''
+            ? null
+            : Number(value)
+          : value,
     }));
     // Clear the field error when user starts typing
     if (errors[name]) {
@@ -97,9 +113,10 @@ export function SubmitProgram() {
 
     setSubmitting(true);
     try {
-      const response = await createProgram(formData);
+      const response = await createProgram(formData, documentFile ?? undefined);
       navigate('/confirmation', { state: { program: response } });
-    } catch {
+    } catch (err) {
+      console.error('Program submission failed:', err);
       setServerError(t('error.generic'));
     } finally {
       setSubmitting(false);
@@ -115,7 +132,12 @@ export function SubmitProgram() {
 
       {serverError && (
         <div className="ontario-alert ontario-alert--error" role="alert">
-          <p>{serverError}</p>
+          <div className="ontario-alert__header">
+            <h2 className="ontario-alert__header-title">{t('error.title')}</h2>
+          </div>
+          <div className="ontario-alert__body">
+            <p>{serverError}</p>
+          </div>
         </div>
       )}
 
@@ -151,6 +173,7 @@ export function SubmitProgram() {
               errors.programName ? 'programName-error' : undefined
             }
             aria-invalid={!!errors.programName}
+            aria-required="true"
             autoComplete="off"
             maxLength={200}
           />
@@ -189,6 +212,7 @@ export function SubmitProgram() {
                 : undefined
             }
             aria-invalid={!!errors.programDescription}
+            aria-required="true"
           />
         </div>
 
@@ -221,6 +245,7 @@ export function SubmitProgram() {
               errors.programTypeId ? 'programTypeId-error' : undefined
             }
             aria-invalid={!!errors.programTypeId}
+            aria-required="true"
           >
             <option value={0} disabled>
               {t('submit.programTypeSelect')}
@@ -265,20 +290,87 @@ export function SubmitProgram() {
           />
         </div>
 
-        {/* Document URL */}
+        {/* Supporting Document (PDF) */}
         <div className="ontario-form-group">
-          <label htmlFor="documentUrl" className="ontario-label">
-            {t('submit.documentUrl')}
+          <label className="ontario-label" htmlFor="document">
+            {t('submit.document')}
+            <span className="ontario-label__flag">({t('common.optional')})</span>
           </label>
+          <p id="document-hint" className="ontario-hint">
+            {t('submit.documentHint')}
+          </p>
+          {errors.document && (
+            <span
+              className="ontario-error-messaging"
+              id="document-error"
+              role="alert"
+            >
+              {errors.document}
+            </span>
+          )}
           <input
-            type="url"
-            id="documentUrl"
-            name="documentUrl"
             className="ontario-input"
-            value={formData.documentUrl}
+            type="file"
+            id="document"
+            name="document"
+            accept=".pdf"
+            aria-describedby={`document-hint${errors.document ? ' document-error' : ''}`}
+            aria-invalid={!!errors.document}
+            onChange={(e) => {
+              const file = e.target.files?.[0] ?? null;
+              if (file && file.type !== 'application/pdf') {
+                setErrors((prev) => ({
+                  ...prev,
+                  document: t('submit.documentErrorType'),
+                }));
+                setDocumentFile(null);
+              } else if (file && file.size > 50 * 1024 * 1024) {
+                setErrors((prev) => ({
+                  ...prev,
+                  document: t('submit.documentErrorSize'),
+                }));
+                setDocumentFile(null);
+              } else {
+                setErrors((prev) => {
+                  const next = { ...prev };
+                  delete next.document;
+                  return next;
+                });
+                setDocumentFile(file);
+              }
+            }}
+          />
+        </div>
+
+        {/* Budget */}
+        <div className="ontario-form-group">
+          <label htmlFor="budget" className="ontario-label">
+            {t('submit.budget')}
+          </label>
+          {errors.budget && (
+            <span
+              className="ontario-error-messaging"
+              id="budget-error"
+              role="alert"
+            >
+              {errors.budget}
+            </span>
+          )}
+          <input
+            type="number"
+            id="budget"
+            name="budget"
+            className={`ontario-input ${
+              errors.budget ? 'ontario-input--error' : ''
+            }`}
+            value={formData.budget ?? ''}
             onChange={handleChange}
-            placeholder={t('submit.documentUrlPlaceholder')}
-            autoComplete="url"
+            placeholder={t('submit.budgetPlaceholder')}
+            min="0"
+            step="0.01"
+            aria-describedby={errors.budget ? 'budget-error' : undefined}
+            aria-invalid={!!errors.budget}
+            autoComplete="off"
           />
         </div>
 

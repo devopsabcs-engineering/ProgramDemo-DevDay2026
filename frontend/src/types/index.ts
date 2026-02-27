@@ -12,7 +12,8 @@ export interface ProgramRequest {
   programDescription: string;
   programTypeId: number;
   submittedBy?: string;
-  documentUrl?: string;
+  /** Requested budget in Canadian dollars (optional). */
+  budget?: number | null;
 }
 
 /** Response body for a program submission. */
@@ -28,6 +29,10 @@ export interface ProgramResponse {
   reviewedBy: string | null;
   reviewComments: string | null;
   documentUrl: string | null;
+  /** AI-generated summary of the attached PDF document. */
+  aiSummary: string | null;
+  /** Requested budget in Canadian dollars. */
+  budget: number | null;
   createdDate: string;
   updatedDate: string;
 }

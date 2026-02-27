@@ -164,6 +164,10 @@ Set up `.vscode/mcp.json` at the start of the project so VS Code and Copilot can
 
 Without MCP configured early, developers lose the ability to pull user stories and manage test plans through Copilot — forcing manual context-switching to the Azure DevOps web portal.
 
+### Containerize the Backend API for Deployment
+
+Deploy the Java API as a Docker container rather than relying on the platform's built-in runtime. During dry runs, deploying the Spring Boot JAR directly to Azure App Service exposed TLS/SSL handshake failures between the App Service Java 21 stack and Azure SQL. Packaging the API in a container (using `eclipse-temurin:21-jre-jammy`) with a known JRE and trusted certificate store eliminated these errors entirely. Containers also provide a consistent runtime across local development, CI, and production, removing an entire class of "works locally but fails in Azure" surprises. Build images with Azure Container Registry Tasks (`az acr build`) so no local Docker daemon is required during CI/CD.
+
 ### Embrace Azure DevOps and GitHub Better Together
 
 This project follows a **better together** model where Azure DevOps and GitHub each handle what they do best:
@@ -172,4 +176,8 @@ This project follows a **better together** model where Azure DevOps and GitHub e
 - **GitHub** — source code repository, pull requests, CI/CD workflows (GitHub Actions), and security (GitHub Advanced Security). GHAS provides Dependabot for dependency updates, secret scanning, and code scanning — capabilities that are native to the GitHub platform.
 
 Commits link back to ADO work items via `AB#{id}` syntax, and PRs auto-close work items with `Fixes AB#{id}`. This gives full traceability from ADO boards to GitHub commits while keeping code, reviews, pipelines, and security scanning in GitHub where they integrate seamlessly.
+
+### Use Local Start and Stop Scripts Before Committing
+
+Run `scripts/Start-Local.ps1` and `scripts/Stop-Local.ps1` to spin up and tear down the full stack locally before pushing changes. `Start-Local.ps1` rebuilds both backend and frontend, launches Spring Boot on port 8080 and the Vite dev server on port 3000, and supports flags like `-SkipBuild`, `-BackendOnly`, `-FrontendOnly`, and `-UseAzureSql` for flexible workflows. `Stop-Local.ps1` cleanly terminates all running processes on those ports. Running a quick local smoke test with these scripts catches build failures, API mismatches, and UI regressions before they reach CI, saving pipeline minutes and keeping the commit history clean.
 

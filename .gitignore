@@ -3,6 +3,20 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
+# Figma files
+*.fig
+
+# Azure Functions local settings (contain secrets; use local.settings.json.example for templates)
+functions/**/local.settings.json
+
+# Azure Functions build/publish artifacts
+functions/**/deploy-pkg/
+functions/**/deploy.zip
+functions/**/publish-test/
+
+# Azurite local storage emulator data
+.azurite/
+
 # User-specific files
 *.rsuser
 *.suo
@@ -491,3 +505,7 @@ pnpm-debug.log*
 # OS files
 .DS_Store
 Thumbs.db
+
+# Diagnostic log downloads
+backend-logs*/
+backend-logs*.zip

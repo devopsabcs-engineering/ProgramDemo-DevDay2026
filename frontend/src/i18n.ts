@@ -17,9 +17,21 @@ i18n
       loadPath: '/locales/{{lng}}/translation.json',
     },
     detection: {
-      order: ['querystring', 'localStorage', 'navigator'],
+      order: ['querystring', 'localStorage', 'htmlTag', 'navigator'],
       caches: ['localStorage'],
     },
   });
+
+i18n.on('languageChanged', (lng: string) => {
+  document.documentElement.lang = lng;
+});
+
+if (i18n.isInitialized) {
+  document.documentElement.lang = i18n.language;
+} else {
+  i18n.on('initialized', () => {
+    document.documentElement.lang = i18n.language;
+  });
+}
 
 export default i18n;

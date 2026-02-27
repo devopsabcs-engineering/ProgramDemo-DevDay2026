@@ -71,6 +71,18 @@ public class Program {
     @Column(name = "document_url", length = 500)
     private String documentUrl;
 
+    /** Requested budget for the program in Canadian dollars. */
+    @Column(name = "budget", precision = 15, scale = 2)
+    private java.math.BigDecimal budget;
+
+    /** AI-generated plain-language summary of the attached document. Set asynchronously by the Azure Function. */
+    @Column(name = "ai_summary", columnDefinition = "NVARCHAR(MAX)")
+    private String aiSummary;
+
+    /** Timestamp when the AI summary was last generated. */
+    @Column(name = "ai_summary_generated_date")
+    private LocalDateTime aiSummaryGeneratedDate;
+
     /** Record creation timestamp. */
     @Column(name = "created_date", nullable = false, updatable = false)
     private LocalDateTime createdDate;

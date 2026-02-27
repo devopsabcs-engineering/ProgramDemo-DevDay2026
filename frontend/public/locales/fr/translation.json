@@ -5,10 +5,14 @@
   },
   "header": {
     "title": "Services de programmes de l'Ontario",
+    "subtitle": "Trouvez des informations sur les programmes et services en un seul endroit.",
+    "menuToggle": "Sujets",
+    "search": "Rechercher",
+    "ontarioLogo": "Ontario",
     "nav": {
       "submit": "Soumettre un programme",
       "search": "Rechercher des programmes",
-      "review": "Examen ministériel"
+      "review": "Examiner les programmes"
     }
   },
   "footer": {
@@ -20,6 +24,9 @@
   "language": {
     "toggle": "English",
     "label": "Sélectionner la langue"
+  },
+  "common": {
+    "optional": "facultatif"
   },
   "submit": {
     "title": "Soumettre une demande de programme",
@@ -34,6 +41,13 @@
     "submittedByPlaceholder": "Entrez votre adresse courriel",
     "documentUrl": "URL du document justificatif (facultatif)",
     "documentUrlPlaceholder": "https://exemple.com/document.pdf",
+    "document": "Document justificatif (PDF)",
+    "documentHint": "Joignez un document PDF pour aider les examinateurs à comprendre votre programme. Maximum 50 Mo.",
+    "documentErrorType": "Seuls les fichiers PDF sont acceptés. Veuillez sélectionner un fichier .pdf.",
+    "documentErrorSize": "La taille du fichier dépasse 50 Mo. Veuillez joindre un fichier PDF plus petit.",
+    "budget": "Budget du programme (facultatif)",
+    "budgetPlaceholder": "p. ex. 250000.00",
+    "budgetInvalid": "Veuillez entrer un montant de budget valide (p. ex. 250000.00).",
     "submitButton": "Soumettre la demande",
     "submitting": "Soumission en cours...",
     "required": "obligatoire"
@@ -92,8 +106,61 @@
     "emailInvalid": "Veuillez entrer une adresse courriel valide."
   },
   "error": {
+    "title": "Erreur",
     "generic": "Une erreur s'est produite. Veuillez réessayer.",
     "notFound": "La ressource demandée est introuvable.",
     "network": "Impossible de se connecter au serveur. Veuillez vérifier votre connexion."
+  },
+  "success": {
+    "title": "Succès"
+  },
+  "review": {
+    "dashboard": {
+      "title": "Examiner les programmes",
+      "description": "Examiner, approuver ou rejeter les demandes de programmes soumises.",
+      "filterLabel": "Filtrer par statut",
+      "filterAll": "Tous les statuts",
+      "loading": "Chargement des soumissions...",
+      "error": "Une erreur s'est produite lors du chargement des soumissions.",
+      "noResults": "Aucune soumission trouvée pour le filtre sélectionné.",
+      "reviewButton": "Examiner"
+    },
+    "detail": {
+      "title": "Examen du programme",
+      "loading": "Chargement des détails du programme...",
+      "error": "Une erreur s'est produite lors du chargement des détails du programme.",
+      "backToDashboard": "Retour au tableau de bord d'examen",
+      "referenceNumber": "Numéro de référence",
+      "programType": "Type de programme",
+      "status": "Statut",
+      "description": "Description",
+      "submittedBy": "Soumis par",
+      "submittedDate": "Date de soumission",
+      "documentUrl": "Document justificatif",
+      "reviewedBy": "Examiné par",
+      "reviewComments": "Commentaires d'examen",
+      "alreadyReviewedTitle": "Examen terminé",
+      "alreadyReviewedMessage": "Ce programme a déjà été examiné. Statut actuel : {{status}}.",
+      "downloadDocument": "Télécharger le document",
+      "aiSummaryHeading": "Résumé du document par IA",
+      "aiSummaryPending": "Le résumé par IA est en cours de génération. Cette page se mettra à jour automatiquement lorsqu'il sera prêt.",
+      "aiSummaryDisclaimer": "Ce résumé a été généré automatiquement par l'IA. Vérifiez les informations importantes dans le document joint."
+    },
+    "form": {
+      "title": "Soumettre la décision d'examen",
+      "reviewerName": "Nom de l'examinateur",
+      "reviewerPlaceholder": "Entrez votre nom complet",
+      "reviewerRequired": "Le nom de l'examinateur est obligatoire.",
+      "decision": "Décision",
+      "approve": "Approuver",
+      "reject": "Rejeter",
+      "comments": "Commentaires d'examen",
+      "commentsPlaceholder": "Entrez vos commentaires d'examen...",
+      "commentsRequiredForReject": "Les commentaires sont obligatoires lors du rejet d'une soumission.",
+      "approveButton": "Approuver le programme",
+      "rejectButton": "Rejeter le programme",
+      "submitting": "Soumission en cours...",
+      "submitError": "Une erreur s'est produite lors de la soumission de l'examen."
+    }
   }
 }

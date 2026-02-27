@@ -22,6 +22,7 @@ export function LanguageToggle() {
       className="ontario-header__language-toggler"
       onClick={handleToggle}
       aria-label={t('language.label')}
+      lang={i18n.language === 'en' ? 'fr' : 'en'}
     >
       {t('language.toggle')}
     </button>

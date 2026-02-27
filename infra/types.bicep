@@ -29,17 +29,11 @@ type DeploymentConfig = {
 @description('SQL Server and database configuration.')
 @sealed()
 type SqlConfig = {
-  @description('Azure AD administrator display name (user or group).')
-  aadAdminLogin: string
-
-  @description('Azure AD administrator object ID.')
-  aadAdminObjectId: string
-
   @description('SQL Database SKU name.')
   skuName: 'Basic' | 'S0' | 'S1' | 'S2' | 'P1'
-
-  @description('Whether to allow Azure services to access the SQL Server.')
-  isAllowAzureServicesEnabled: bool
+  // Note: the SQL AAD administrator is a user-assigned managed identity
+  // created automatically by the sql-admin-identity module. Human DBA
+  // access must be granted separately (out of scope for this template).
 }
 
 /* ─── App Service Configuration ─── */
@@ -63,7 +57,7 @@ var deploymentDefaults = {
   prefix: 'ops-demo'
   location: 'canadacentral'
   environment: 'dev'
-  instanceNumber: '123'
+  instanceNumber: '125'
   tags: {
     project: 'OPS-ProgramDemo'
     environment: 'dev'

@@ -53,6 +53,12 @@ public class ProgramResponse {
     /** URL to the supporting document. */
     private String documentUrl;
 
+    /** AI-generated plain-language summary of the attached document. Null until the Function App writes it. */
+    private String aiSummary;
+
+    /** Requested budget for the program in Canadian dollars. */
+    private java.math.BigDecimal budget;
+
     /** Record creation timestamp. */
     private LocalDateTime createdDate;
 

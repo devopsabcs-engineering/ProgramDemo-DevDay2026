@@ -1,23 +1,65 @@
 import axios from 'axios';
 import type { ProgramRequest, ProgramResponse, ReviewRequest } from '../types';
+import { trackException } from './appInsights';
+
+/**
+ * Base URL for the backend API.
+ *
+ * In local development, Vite proxies '/api' to the backend.
+ * In production, VITE_API_URL is set to the full backend URL
+ * (e.g. https://app-ops-demo-api-dev-125.azurewebsites.net/api).
+ */
+const API_BASE_URL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api';
 
 const apiClient = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
+// Log API errors to Application Insights for end-to-end observability.
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const url = error.config?.url ?? 'unknown';
+    const method = (error.config?.method ?? 'unknown').toUpperCase();
+    const status = error.response?.status?.toString() ?? 'network_error';
+    trackException(
+      error instanceof Error ? error : new Error(String(error)),
+      { url, method, status, component: 'api-client' }
+    );
+    return Promise.reject(error);
+  }
+);
+
 /**
- * Submits a new program request.
+ * Submits a new program request using multipart/form-data.
  *
- * @param data - The program submission data
+ * The program JSON data is sent as the {@code program} part;
+ * an optional PDF document is sent as the {@code document} part.
+ *
+ * @param data     - The program submission data
+ * @param document - Optional PDF file to attach
  * @returns The created program response
  */
 export async function createProgram(
-  data: ProgramRequest
+  data: ProgramRequest,
+  document?: File
 ): Promise<ProgramResponse> {
-  const response = await apiClient.post<ProgramResponse>('/programs', data);
+  const form = new FormData();
+  form.append(
+    'program',
+    new Blob([JSON.stringify(data)], { type: 'application/json' })
+  );
+  if (document) {
+    form.append('document', document);
+  }
+  const response = await apiClient.post<ProgramResponse>('/programs', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
   return response.data;
 }
 
@@ -64,4 +106,17 @@ export async function reviewProgram(
     data
   );
   return response.data;
+}
+
+/**
+ * Returns the URL for downloading the supporting document for a program.
+ *
+ * The backend proxies the blob download using managed identity so the
+ * storage account can remain private (publicNetworkAccess: Disabled).
+ *
+ * @param id - The program ID
+ * @returns The URL to the backend document proxy endpoint
+ */
+export function getDocumentDownloadUrl(id: number): string {
+  return `${API_BASE_URL}/programs/${id}/document`;
 }

@@ -1,14 +1,17 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import './App.css';
 import { Layout } from './components/layout/Layout';
 import { SubmitProgram } from './pages/SubmitProgram';
 import { SubmitConfirmation } from './pages/SubmitConfirmation';
 import { SearchPrograms } from './pages/SearchPrograms';
+import { ReviewDashboard } from './pages/ReviewDashboard';
+import { ReviewDetail } from './pages/ReviewDetail';
 
 /**
  * Root application component.
  *
  * Sets up react-router with Ontario Design System layout wrapper
- * and defines routes for the citizen portal pages.
+ * and defines routes for the citizen portal and ministry review pages.
  */
 function App() {
   return (
@@ -18,6 +21,8 @@ function App() {
           <Route path="/" element={<SubmitProgram />} />
           <Route path="/confirmation" element={<SubmitConfirmation />} />
           <Route path="/search" element={<SearchPrograms />} />
+          <Route path="/review" element={<ReviewDashboard />} />
+          <Route path="/review/:id" element={<ReviewDetail />} />
         </Route>
       </Routes>
     </BrowserRouter>

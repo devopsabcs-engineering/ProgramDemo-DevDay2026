@@ -11,13 +11,15 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  *
  * <p>Restricts cross-origin requests to the frontend origin only.
  * The allowed origin is configurable via the {@code app.cors.allowed-origin}
- * property, defaulting to {@code http://localhost:5173} for local development.</p>
+ * property, defaulting to {@code http://localhost:3000} for local development.
+ * In Azure, the {@code APP_CORS_ALLOWED_ORIGIN} environment variable is set
+ * to the deployed frontend URL.</p>
  */
 @Configuration
 public class CorsConfig {
 
     /** The allowed frontend origin for CORS requests. */
-    @Value("${app.cors.allowed-origin:http://localhost:5173}")
+    @Value("${app.cors.allowed-origin:http://localhost:3000}")
     private String allowedOrigin;
 
     /**
@@ -32,7 +34,7 @@ public class CorsConfig {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/api/**")
                         .allowedOrigins(allowedOrigin)
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true)
                         .maxAge(3600);
