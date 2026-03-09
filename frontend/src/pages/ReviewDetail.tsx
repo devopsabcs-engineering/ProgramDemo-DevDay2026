@@ -39,6 +39,10 @@ export function ReviewDetail() {
     fetchProgram();
   }, [fetchProgram]);
 
+  useEffect(() => {
+    document.title = t('review.detail.pageTitle');
+  }, [t]);
+
   /** Returns the program type name in the current language. */
   const getTypeName = (p: ProgramResponse) =>
     i18n.language === 'fr' ? p.programTypeNameFr : p.programTypeNameEn;
@@ -167,6 +171,7 @@ export function ReviewDetail() {
                     href={getDocumentDownloadUrl(program.id)}
                     target="_blank"
                     rel="noopener noreferrer"
+                    aria-label={`${t('review.detail.downloadDocument')} (${t('common.opensNewWindow')})`}
                   >
                     {t('review.detail.downloadDocument')}
                   </a>
@@ -202,7 +207,7 @@ export function ReviewDetail() {
       {/* AI Document Summary (shown when the Function App has generated one) */}
       {program.aiSummary && (
         <section aria-labelledby="ai-summary-heading">
-          <h2 id="ai-summary-heading" className="ontario-h3">
+          <h3 id="ai-summary-heading" className="ontario-h3">
             {t('review.detail.aiSummaryHeading')}
           </h2>
           <div className="ontario-callout">
@@ -215,7 +220,7 @@ export function ReviewDetail() {
       {/* Summary pending indicator — shown when a document exists but summary is not yet ready */}
       {program.documentUrl && !program.aiSummary && (
         <section aria-labelledby="ai-summary-pending-heading">
-          <h2 id="ai-summary-pending-heading" className="ontario-h3">
+          <h3 id="ai-summary-pending-heading" className="ontario-h3">
             {t('review.detail.aiSummaryHeading')}
           </h2>
           <div className="ontario-callout">

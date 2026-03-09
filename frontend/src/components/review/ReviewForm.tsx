@@ -84,6 +84,10 @@ export function ReviewForm({ programId, onReviewComplete }: ReviewFormProps) {
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      setTimeout(() => {
+        const firstErrorField = document.querySelector('[aria-invalid="true"]') as HTMLElement;
+        firstErrorField?.focus();
+      }, 0);
       return;
     }
 

@@ -19,6 +19,10 @@ export function SearchPrograms() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    document.title = t('search.pageTitle');
+  }, [t]);
+
   const fetchPrograms = useCallback(
     async (query?: string) => {
       setLoading(true);
@@ -139,7 +143,8 @@ export function SearchPrograms() {
 
       {!loading && !error && programs.length > 0 && (
         <div className="ontario-table-container">
-          <table className="ontario-table" aria-label={t('search.title')}>
+          <table className="ontario-table" aria-label={t('search.tableLabel')}>
+          <caption className="ontario-show-for-sr">{t('search.tableLabel')}</caption>
           <thead>
             <tr>
               <th scope="col">{t('search.table.id')}</th>

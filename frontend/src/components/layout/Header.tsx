@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
 import { LanguageToggle } from '../common/LanguageToggle';
@@ -15,6 +15,18 @@ export function Header() {
   const { t } = useTranslation();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && menuOpen) {
+        setMenuOpen(false);
+        menuButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [menuOpen]);
 
   const navItems = [
     { to: '/', label: t('header.nav.submit') },
@@ -75,6 +87,7 @@ export function Header() {
 
           {/* Topics / Menu toggle */}
           <button
+            ref={menuButtonRef}
             className="ontario-header__menu-toggler"
             type="button"
             aria-expanded={menuOpen}

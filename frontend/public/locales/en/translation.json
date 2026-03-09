@@ -26,9 +26,11 @@
     "label": "Select language"
   },
   "common": {
-    "optional": "optional"
+    "optional": "optional",
+    "opensNewWindow": "opens in a new window"
   },
   "submit": {
+    "pageTitle": "Submit a Program - OPS Program Approval",
     "title": "Submit a Program Request",
     "description": "Use this form to submit a new program request for ministry review.",
     "programName": "Program Name",
@@ -53,6 +55,7 @@
     "required": "required"
   },
   "confirmation": {
+    "pageTitle": "Submission Confirmed - OPS Program Approval",
     "title": "Submission Received",
     "message": "Your program request has been submitted successfully.",
     "referenceNumber": "Reference Number",
@@ -65,6 +68,8 @@
     "viewPrograms": "View All Programs"
   },
   "search": {
+    "pageTitle": "Search Programs - OPS Program Approval",
+    "tableLabel": "Program search results",
     "title": "Search Programs",
     "description": "Search and view program submissions.",
     "searchPlaceholder": "Search by program name...",
@@ -116,6 +121,8 @@
   },
   "review": {
     "dashboard": {
+      "pageTitle": "Review Dashboard - OPS Program Approval",
+      "tableLabel": "Program submissions for review",
       "title": "Review Programs",
       "description": "Review, approve, or reject submitted program requests.",
       "filterLabel": "Filter by Status",
@@ -126,6 +133,7 @@
       "reviewButton": "Review"
     },
     "detail": {
+      "pageTitle": "Program Review - OPS Program Approval",
       "title": "Program Review",
       "loading": "Loading program details...",
       "error": "An error occurred while loading program details.",

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -29,6 +29,10 @@ const PROGRAM_TYPES: ProgramTypeOption[] = [
 export function SubmitProgram() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = t('submit.pageTitle');
+  }, [t]);
 
   const [formData, setFormData] = useState<ProgramRequest>({
     programName: '',
@@ -108,6 +112,10 @@ export function SubmitProgram() {
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
+      setTimeout(() => {
+        const firstErrorField = document.querySelector('[aria-invalid="true"]') as HTMLElement;
+        firstErrorField?.focus();
+      }, 0);
       return;
     }
 
