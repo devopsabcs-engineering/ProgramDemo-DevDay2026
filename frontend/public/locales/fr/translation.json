@@ -26,9 +26,11 @@
     "label": "Sélectionner la langue"
   },
   "common": {
-    "optional": "facultatif"
+    "optional": "facultatif",
+    "opensNewWindow": "ouvre dans une nouvelle fenêtre"
   },
   "submit": {
+    "pageTitle": "Soumettre un programme - Approbation des programmes OPS",
     "title": "Soumettre une demande de programme",
     "description": "Utilisez ce formulaire pour soumettre une nouvelle demande de programme pour examen ministériel.",
     "programName": "Nom du programme",
@@ -53,6 +55,7 @@
     "required": "obligatoire"
   },
   "confirmation": {
+    "pageTitle": "Soumission confirmée - Approbation des programmes OPS",
     "title": "Soumission reçue",
     "message": "Votre demande de programme a été soumise avec succès.",
     "referenceNumber": "Numéro de référence",
@@ -65,6 +68,8 @@
     "viewPrograms": "Voir tous les programmes"
   },
   "search": {
+    "pageTitle": "Rechercher des programmes - Approbation des programmes OPS",
+    "tableLabel": "Résultats de recherche de programmes",
     "title": "Rechercher des programmes",
     "description": "Recherchez et consultez les soumissions de programmes.",
     "searchPlaceholder": "Rechercher par nom de programme...",
@@ -116,6 +121,8 @@
   },
   "review": {
     "dashboard": {
+      "pageTitle": "Tableau de bord des examens - Approbation des programmes OPS",
+      "tableLabel": "Soumissions de programmes à examiner",
       "title": "Examiner les programmes",
       "description": "Examiner, approuver ou rejeter les demandes de programmes soumises.",
       "filterLabel": "Filtrer par statut",
@@ -126,6 +133,7 @@
       "reviewButton": "Examiner"
     },
     "detail": {
+      "pageTitle": "Examen du programme - Approbation des programmes OPS",
       "title": "Examen du programme",
       "loading": "Chargement des détails du programme...",
       "error": "Une erreur s'est produite lors du chargement des détails du programme.",

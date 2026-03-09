@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
 import type { ProgramResponse } from '../types';
@@ -12,6 +13,10 @@ export function SubmitConfirmation() {
   const { t, i18n } = useTranslation();
   const location = useLocation();
   const program = (location.state as { program?: ProgramResponse })?.program;
+
+  useEffect(() => {
+    document.title = t('confirmation.pageTitle');
+  }, [t]);
 
   if (!program) {
     return (
@@ -66,7 +71,7 @@ export function SubmitConfirmation() {
         </div>
       </div>
 
-      <h3 className="ontario-h4">{t('confirmation.nextSteps')}</h3>
+      <h4 className="ontario-h4">{t('confirmation.nextSteps')}</h4>
       <p>{t('confirmation.nextStepsDescription')}</p>
 
       <div className="ontario-button-group">

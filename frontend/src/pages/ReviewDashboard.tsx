@@ -29,6 +29,10 @@ export function ReviewDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    document.title = t('review.dashboard.pageTitle');
+  }, [t]);
+
   const fetchPrograms = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -147,8 +151,9 @@ export function ReviewDashboard() {
         <div className="ontario-table-container">
           <table
             className="ontario-table"
-            aria-label={t('review.dashboard.title')}
+            aria-label={t('review.dashboard.tableLabel')}
           >
+            <caption className="ontario-show-for-sr">{t('review.dashboard.tableLabel')}</caption>
             <thead>
               <tr>
                 <th scope="col">{t('search.table.id')}</th>

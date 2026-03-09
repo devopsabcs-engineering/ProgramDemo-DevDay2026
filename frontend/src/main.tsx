@@ -6,7 +6,7 @@ import App from './App';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Suspense fallback={<div className="ontario-loading-indicator">Loading…</div>}>
+    <Suspense fallback={<div className="ontario-loading-indicator">Loading… / Chargement…</div>}>
       <App />
     </Suspense>
   </StrictMode>
